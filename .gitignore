@@ -1,0 +1,28 @@
+# Signing: the keystore and its password stay off the public repo.
+PropsLab/PropsLab/keystore/*.jks
+PropsLab/PropsLab/keystore.properties
+
+# Vercel CLI writes a local token file into the site folder.
+site/.env.local
+site/.vercel
+
+# Gradle / Android output and local tool caches.
+PropsLab/PropsLab/.gradle/
+PropsLab/PropsLab/.kotlin/
+PropsLab/PropsLab/build/
+PropsLab/PropsLab/app/build/
+PropsLab/PropsLab/local.properties
+
+# Third-party native checkout: clone it locally (see README).
+vendor/llama.cpp/
+
+# Agent and OS scratch files.
+.tmp/
+.DS_Store
+Thumbs.db
+
+# Native/CMake intermediates and IDE captures.
+PropsLab/PropsLab/app/.cxx/
+PropsLab/PropsLab/app/.externalNativeBuild/
+PropsLab/PropsLab/.externalNativeBuild/
+PropsLab/PropsLab/captures/

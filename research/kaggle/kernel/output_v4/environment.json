@@ -1,0 +1,50 @@
+{
+  "python": "3.13.15",
+  "numpy": "2.1.3",
+  "pandas": "2.3.3",
+  "sklearn": "1.6.1",
+  "seed": 20261029,
+  "n_boot": 10000,
+  "deltas": [
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3
+  ],
+  "features": [
+    "mu",
+    "line",
+    "delta",
+    "t_sd",
+    "t_min",
+    "t_usg",
+    "rest_days",
+    "b2b",
+    "is_home",
+    "n_prior_season",
+    "own_pace_trail",
+    "opp_def100_trail"
+  ],
+  "monotonic_cst": [
+    1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "fit_rows": 594251,
+  "holdout_rows": 70952,
+  "grid_rows_fit": 4159757,
+  "grid_rows_holdout": 496664,
+  "runtime_seconds": 460.5
+}

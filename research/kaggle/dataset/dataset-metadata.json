@@ -1,0 +1,16 @@
+{
+  "title": "PropsLab NBA player-game training extract",
+  "subtitle": "Leakage-free player-game features for NBA prop pricing",
+  "id": "tap919/propslab-nba-prop-training",
+  "licenses": [
+    {
+      "name": "CC0-1.0"
+    }
+  ],
+  "description": "Frozen training extract for the PropsLab NBA player-prop pricing model.\n\n## Provenance\nDerived from `chevronronson/nba-stats-dataset` (`sql/nba_stats.sqlite`), which is CC0-1.0. Regular season only (`game_id` prefix `002`), seasons 1996-97 through 2025-26. Build script and validation gates are in the PropsLab repo under `research/kaggle/`.\n\n## Grain\nOne row per player-game, **games actually played**. The source table contains no DNP rows (56 zero-minute rows out of 787,531; `min` is never null), so availability is not a label this extract can carry. All labels are conditional on playing, which matches how sportsbooks settle player props.\n\n## Columns\n- `mu` - champion mean: `0.5 * season_to_date + 0.5 * trailing_10`, floored at 0. Coefficients 0.469/0.471 came from a regression on this same corpus.\n- `t_pts`, `t_min`, `t_sd`, `t_usg` - trailing 10-game mean points, minutes, standard deviation, usage (min 5 games, `shift(1)`).\n- `s_pts`, `s_min` - season-to-date means, same season, `shift(1)`.\n- `rest_days`, `b2b`, `is_home` - schedule context known before tip-off.\n- `n_prior_season` - games played earlier in the season (role stability).\n- `own_pace_trail`, `opp_def100_trail` - trailing team pace and opponent points allowed per 100 possessions.\n- `pts` - points scored (the label).\n\n## Leakage guarantees\nEvery player feature is `shift(1)`-lagged, so a game never contributes to its own predictors. Verified by recomputing 1,135 trailing means straight from SQL: 0 mismatches.\n\n## Two data traps this extract avoids\n1. `team_boxscores.def_rating`, `pace` and `poss` are **0 for 93.1% of 2025-26**, which is inside the evaluation window. Pace and defensive strength here are therefore derived from raw counting stats (`fga`, `fta`, `oreb`, `tov`, `pts`), which are populated for every season.\n2. `available_flag` is NaN for 51% of rows and 2.0 for 3,160 rows, so it is not a usable availability label.\n\n## Split used downstream\nFit: seasons through 2022-23 (594,251 rows). Holdout: 2023-24, 2024-25, 2025-26 (70,952 rows).\n\n## Files\n- `propslab_training.parquet` - full extract (665,203 rows, 22 columns).\n- `propslab_training_sample.csv` - 10,000-row sample for preview.\n- `schema.json` - column types and row counts.\n- `manifest.json` - SHA-256 per file.",
+  "keywords": [
+    "basketball",
+    "sports"
+  ],
+  "expectedUpdateFrequency": "never"
+}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Cheat Code">
+  <defs>
+    <linearGradient id="court" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#182333"/>
+      <stop offset="1" stop-color="#0B1018"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#court)"/>
+  <rect width="512" height="512" rx="116" fill="none" stroke="#263247" stroke-width="3"/>
+
+  <circle cx="256" cy="248" r="150" fill="none" stroke="#58C7E6" stroke-width="24" stroke-linecap="round"
+          stroke-dasharray="404 942" transform="rotate(-90 256 248)" opacity="0.28" filter="url(#soft)"/>
+
+  <!-- The split ring: over, under, push. -->
+  <circle cx="256" cy="248" r="150" fill="none" stroke="#58C7E6" stroke-width="22" stroke-linecap="round"
+          stroke-dasharray="542 942" transform="rotate(-90 256 248)"/>
+  <circle cx="256" cy="248" r="150" fill="none" stroke="#F0A54B" stroke-width="22" stroke-linecap="round"
+          stroke-dasharray="262 942" transform="rotate(146 256 248)"/>
+  <circle cx="256" cy="248" r="150" fill="none" stroke="#5E6B80" stroke-width="22" stroke-linecap="round"
+          stroke-dasharray="118 942" transform="rotate(256 256 248)"/>
+
+  <!-- The edge: the gap between the market's price and the model's. -->
+  <polyline points="184,300 236,252 282,284 336,206" fill="none" stroke="#EDEAE2" stroke-width="18"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="336" cy="206" r="13" fill="#6FD3A0"/>
+</svg>

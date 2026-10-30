@@ -1,0 +1,23 @@
+{
+  "source_db": "chevronronson__nba-stats-dataset/sql/nba_stats.sqlite",
+  "source_license": "CC0-1.0",
+  "built_at_utc": "2026-10-29T02:13:09.760846+00:00",
+  "rows": 665203,
+  "files": [
+    {
+      "path": "propslab_training.parquet",
+      "bytes": 18118646,
+      "sha256": "962376828535ff49e58b92b4b98cd7c687eabc21326ad68a4ffc66deefba8dbc"
+    },
+    {
+      "path": "propslab_training_sample.csv",
+      "bytes": 1722004,
+      "sha256": "f6c05f1455a7f9f2e1c5edbe5c5741c95e9e38441dc069b92ba17197daa4b67e"
+    },
+    {
+      "path": "schema.json",
+      "bytes": 1251,
+      "sha256": "0e2a6dfc1c625c1a9bb8d09a7c547ae515c017cdc8d30f9f27bf90ec9236578c"
+    }
+  ]
+}

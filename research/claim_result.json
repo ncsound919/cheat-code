@@ -1,0 +1,46 @@
+{
+ "claim": "their defense decides this game",
+ "factor": "defense",
+ "rows": 665203,
+ "factor_test": {
+  "name": "opp_def100_trail",
+  "supported": false,
+  "slope": 0.03582302953172392,
+  "t": 30.341826853760264,
+  "n": 665203,
+  "note": "Points above baseline vs opponent defensive rating. Positive = a worse defense allows more than the baseline expects.",
+  "expected": "lower points"
+ },
+ "replay": {
+  "bets": 0,
+  "roi": 0.0,
+  "t": 0.0,
+  "brier": 0.247893651698228,
+  "holdout_bets": 0,
+  "holdout_roi": null,
+  "max_edge": 1.03610258209061,
+  "max_under_edge": 1.0639465960815522,
+  "trials": {
+   "1.0": {
+    "bets": 4,
+    "roi": 0.9090909090909091,
+    "t": 0.0,
+    "holdout_bets": 0,
+    "holdout_roi": null
+   },
+   "0.5": {
+    "bets": 14552,
+    "roi": 0.14424758858513667,
+    "t": 18.599819941943604,
+    "holdout_bets": 77,
+    "holdout_roi": 0.016528925619834718
+   }
+  },
+  "line": "nearest half point to mu",
+  "price": -110,
+  "edge": "claim projection minus line",
+  "note": "Constructed -110 line at the player own baseline; the claim supplies the projection, not a real market price."
+ },
+ "verdict": "UNTESTED",
+ "note": "The idea did not move points in the claimed direction on 665k games (t 30.34)."
+}

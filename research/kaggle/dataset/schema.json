@@ -1,0 +1,42 @@
+{
+  "rows": 665203,
+  "columns": {
+    "season_year": "str",
+    "game_id": "str",
+    "game_date": "str",
+    "player_id": "int64",
+    "player_name": "str",
+    "team_id": "int64",
+    "opp_team_id": "int64",
+    "is_home": "int64",
+    "rest_days": "float32",
+    "b2b": "int64",
+    "n_prior_season": "int64",
+    "t_pts": "float32",
+    "t_min": "float32",
+    "t_sd": "float32",
+    "t_usg": "float32",
+    "s_pts": "float32",
+    "s_min": "float32",
+    "mu": "float32",
+    "own_pace_trail": "float32",
+    "opp_def100_trail": "float32",
+    "pts": "int64",
+    "min": "int64"
+  },
+  "seasons": [
+    "1996-97",
+    "2025-26"
+  ],
+  "season_count": 30,
+  "players": 2615,
+  "games": 33460,
+  "label": "pts (points scored in the game); binary target is built in the kernel as pts > line",
+  "notes": [
+    "Regular season only (game_id prefix 002).",
+    "Games actually played only: player_boxscores contains no DNP rows.",
+    "All player features are shift(1)-lagged; a game never contributes to its own features.",
+    "mu = 0.5*season_to_date + 0.5*trailing_10, floored at 0.",
+    "own_pace_trail and opp_def100_trail are derived from raw counting stats, not the precomputed rating columns."
+  ]
+}

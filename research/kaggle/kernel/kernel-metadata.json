@@ -1,0 +1,17 @@
+{
+  "id": "tap919/propslab-challenger-table-vs-constrained-gbm",
+  "title": "PropsLab challenger - table vs constrained GBM",
+  "code_file": "train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "machine_shape": "",
+  "dataset_sources": [
+    "tap919/propslab-nba-prop-training"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

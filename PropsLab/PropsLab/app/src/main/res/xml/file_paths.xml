@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Two narrow shares: the flyer PNGs drawn for the share sheet, and the APK the in-app updater
+  downloaded. Nothing else in the app's storage is reachable through this provider.
+-->
+<paths>
+    <cache-path name="flyers" path="flyers/" />
+    <cache-path name="updates" path="updates/" />
+</paths>

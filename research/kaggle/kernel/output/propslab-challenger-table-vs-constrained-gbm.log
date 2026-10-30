@@ -1,0 +1,108 @@
+[{"stream_name":"stdout","time":5.251146575,"data":"[    0.0s] verifying dataset ...\n"}
+,{"stream_name":"stdout","time":5.251224654,"data":"[    0.0s] input: /kaggle/input/datasets/tap919/propslab-nba-prop-training\n"}
+,{"stream_name":"stdout","time":5.626621359,"data":"[    0.4s] PASS  dataset sha256 matches manifest  962376828535ff49\n"}
+,{"stream_name":"stdout","time":6.102408461,"data":"[    0.9s] PASS  row count  665,203\n"}
+,{"stream_name":"stdout","time":6.396966661,"data":"[    1.1s] PASS  no nulls  0 nulls\n"}
+,{"stream_name":"stdout","time":6.665735597,"data":"[    1.4s] PASS  fit rows  594,251\n"}
+,{"stream_name":"stdout","time":6.665774813,"data":"[    1.4s] PASS  holdout rows  70,952\n"}
+,{"stream_name":"stdout","time":6.714375508,"data":"[    1.5s] PASS  no season overlap  \n"}
+,{"stream_name":"stdout","time":6.7144098660000004,"data":"[    1.5s] expanding grid ...\n"}
+,{"stream_name":"stdout","time":7.360605722,"data":"[    2.1s] fit grid (4159757, 12)  holdout grid (496664, 12)\n"}
+,{"stream_name":"stdout","time":7.360742593,"data":"[    2.1s] fitting champion table ...\n"}
+,{"stream_name":"stdout","time":7.41158278,"data":"[    2.2s] PASS  champion probabilities in (0,1)  min 1.55e-01 max 0.999999\n"}
+,{"stream_name":"stdout","time":7.4116194,"data":"[    2.2s] fitting C1 logistic (cross-fitted isotonic) ...\n"}
+,{"stream_name":"stdout","time":18.882916936,"data":"[   13.6s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4805 (7s)\n"}
+,{"stream_name":"stdout","time":25.448224811,"data":"[   20.2s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4828 (7s)\n"}
+,{"stream_name":"stdout","time":32.054620579,"data":"[   26.8s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4790 (7s)\n"}
+,{"stream_name":"stdout","time":38.742404922,"data":"[   33.5s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4809 (7s)\n"}
+,{"stream_name":"stdout","time":39.020537659,"data":"[   33.8s] fitting C2 constrained GBM (cross-fitted isotonic) ...\n"}
+,{"stream_name":"stdout","time":98.836928404,"data":"[   93.6s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4806 (57s)\n"}
+,{"stream_name":"stdout","time":157.887007676,"data":"[  152.6s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4823 (59s)\n"}
+,{"stream_name":"stdout","time":218.600180045,"data":"[  213.3s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4791 (61s)\n"}
+,{"stream_name":"stdout","time":281.635958104,"data":"[  276.4s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4816 (63s)\n"}
+,{"stream_name":"stdout","time":301.960831989,"data":"[  296.7s] fitting C2-core ablation (H4: do rest/opponent-defense matter?) ...\n"}
+,{"stream_name":"stdout","time":353.811673521,"data":"[  348.6s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4817 (49s)\n"}
+,{"stream_name":"stdout","time":401.439052001,"data":"[  396.2s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4794 (48s)\n"}
+,{"stream_name":"stdout","time":449.580212979,"data":"[  444.3s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4812 (48s)\n"}
+,{"stream_name":"stdout","time":497.26757893,"data":"[  492.0s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4808 (48s)\n"}
+,{"stream_name":"stdout","time":517.79030306,"data":"[  512.5s] scoring ...\n"}
+,{"stream_name":"stdout","time":517.790874842,"data":"[  512.5s] PASS  champion_table finite  \n"}
+,{"stream_name":"stdout","time":517.791742311,"data":"[  512.5s] PASS  champion_table in (0,1)  \n"}
+,{"stream_name":"stdout","time":518.235945788,"data":"[  513.0s] PASS  C1_logistic finite  \n"}
+,{"stream_name":"stdout","time":518.23665114,"data":"[  513.0s] PASS  C1_logistic in (0,1)  \n"}
+,{"stream_name":"stdout","time":518.573962834,"data":"[  513.3s] PASS  C2_gbm finite  \n"}
+,{"stream_name":"stdout","time":518.574575657,"data":"[  513.3s] PASS  C2_gbm in (0,1)  \n"}
+,{"stream_name":"stdout","time":519.068314472,"data":"[  513.8s] PASS  C2_core_ablation finite  \n"}
+,{"stream_name":"stdout","time":519.069104477,"data":"[  513.8s] PASS  C2_core_ablation in (0,1)  \n"}
+,{"stream_name":"stdout","time":519.536260637,"data":"[  514.3s] PASS  B0_base_rate finite  \n"}
+,{"stream_name":"stdout","time":519.536938941,"data":"[  514.3s] PASS  B0_base_rate in (0,1)  \n"}
+,{"stream_name":"stdout","time":519.860374263,"data":"[  514.6s] PASS  B0 base-rate Brier near 0.25  0.2294\n"}
+,{"stream_name":"stdout","time":520.621174591,"data":"[  515.4s] PASS  champion Brier at delta=0 within 0.02 of prior 0.2486  delta0=0.249044 pooled=0.226308\n"}
+,{"stream_name":"stdout","time":520.901287893,"data":"[  515.7s] PASS  GBM monotonicity violations \u003c 0.5%  0.000% (max +0.00e+00)\n"}
+,{"stream_name":"stdout","time":520.901324257,"data":"[  515.7s] bootstrap ...\n"}
+,{"stream_name":"stdout","time":524.31973302,"data":"[  519.1s]   C1_logistic vs champion, game-clustered: +0.001803 [+0.001578, +0.002022]\n"}
+,{"stream_name":"stdout","time":525.132783428,"data":"[  519.9s]   C1_logistic vs champion, player-clustered: +0.001799 [+0.001391, +0.002215]\n"}
+,{"stream_name":"stdout","time":528.487890828,"data":"[  523.2s]   C2_gbm vs champion, game-clustered: -0.001520 [-0.001769, -0.001279]\n"}
+,{"stream_name":"stdout","time":529.278545041,"data":"[  524.0s]   C2_gbm vs champion, player-clustered: -0.001519 [-0.001789, -0.001249]\n"}
+,{"stream_name":"stdout","time":532.619117622,"data":"[  527.4s]   C2_core_ablation vs champion, game-clustered: -0.000736 [-0.000945, -0.000532]\n"}
+,{"stream_name":"stdout","time":533.404879186,"data":"[  528.2s]   C2_core_ablation vs champion, player-clustered: -0.000735 [-0.000950, -0.000519]\n"}
+,{"stream_name":"stdout","time":533.838601683,"data":"[  528.6s] VERDICT: PROMOTE C2_gbm\n"}
+,{"stream_name":"stdout","time":533.838632582,"data":"[  528.6s] done in 529s\n"}
+,{"stream_name":"stdout","time":533.83863981,"data":"# PropsLab challenger run — result\n"}
+,{"stream_name":"stdout","time":533.838646766,"data":"\n"}
+,{"stream_name":"stdout","time":533.838651683,"data":"**Verdict: PROMOTE C2_gbm**\n"}
+,{"stream_name":"stdout","time":533.838655477,"data":"\n"}
+,{"stream_name":"stdout","time":533.838659495,"data":"Dataset `tap919/propslab-nba-prop-training` (sha256 `962376828535ff49…`). Fit ≤2022-23 (594,251 player-games), holdout 2023-24, 2024-25, 2025-26 (70,952). Grid: 7 line offsets, 496,664 holdout evaluations.\n"}
+,{"stream_name":"stdout","time":533.838665894,"data":"\n"}
+,{"stream_name":"stdout","time":533.838669439,"data":"## Headline\n"}
+,{"stream_name":"stdout","time":533.838672995,"data":"\n"}
+,{"stream_name":"stdout","time":533.838676533,"data":"| model | Brier | log loss | ECE | slope | ΔBrier vs table |\n"}
+,{"stream_name":"stdout","time":533.838680373,"data":"|---|---:|---:|---:|---:|---:|\n"}
+,{"stream_name":"stdout","time":533.838683977,"data":"| champion_table | 0.226308 | 0.640863 | 0.01376 | 0.966 |  |\n"}
+,{"stream_name":"stdout","time":533.838687814,"data":"| C1_logistic | 0.228109 | 0.648117 | 0.01033 | 0.938 | +0.001801 |\n"}
+,{"stream_name":"stdout","time":533.838691665,"data":"| C2_gbm | 0.224787 | 0.637540 | 0.00570 | 0.986 | -0.001520 |\n"}
+,{"stream_name":"stdout","time":533.838695429,"data":"| C2_core_ablation | 0.225573 | 0.639265 | 0.00488 | 0.985 | -0.000735 |\n"}
+,{"stream_name":"stdout","time":533.838699245,"data":"| B0_base_rate | 0.229415 | 0.650969 | 0.00678 | 0.946 | +0.003107 |\n"}
+,{"stream_name":"stdout","time":533.838702965,"data":"\n"}
+,{"stream_name":"stdout","time":533.838706467,"data":"## Promotion rule (all six must hold)\n"}
+,{"stream_name":"stdout","time":533.8387574,"data":"\n"}
+,{"stream_name":"stdout","time":533.838764778,"data":"### C1_logistic — REJECTED\n"}
+,{"stream_name":"stdout","time":533.83876977,"data":"\n"}
+,{"stream_name":"stdout","time":533.838774057,"data":"- [ ] delta_brier_negative\n"}
+,{"stream_name":"stdout","time":533.838778529,"data":"- [ ] ci_game_excludes_zero\n"}
+,{"stream_name":"stdout","time":533.838783172,"data":"- [ ] ci_player_excludes_zero\n"}
+,{"stream_name":"stdout","time":533.838788169,"data":"- [ ] ece_le_0_010\n"}
+,{"stream_name":"stdout","time":533.838791283,"data":"- [x] slope_in_range\n"}
+,{"stream_name":"stdout","time":533.838794203,"data":"- [ ] two_of_three_seasons\n"}
+,{"stream_name":"stdout","time":533.838797162,"data":"- per-season ΔBrier: 2023-24 +0.002130, 2024-25 +0.002116, 2025-26 +0.001163\n"}
+,{"stream_name":"stdout","time":533.838800317,"data":"\n"}
+,{"stream_name":"stdout","time":533.838803969,"data":"### C2_gbm — PROMOTED\n"}
+,{"stream_name":"stdout","time":533.838806914,"data":"\n"}
+,{"stream_name":"stdout","time":533.838809745,"data":"- [x] delta_brier_negative\n"}
+,{"stream_name":"stdout","time":533.838812739,"data":"- [x] ci_game_excludes_zero\n"}
+,{"stream_name":"stdout","time":533.83881561,"data":"- [x] ci_player_excludes_zero\n"}
+,{"stream_name":"stdout","time":533.838818483,"data":"- [x] ece_le_0_010\n"}
+,{"stream_name":"stdout","time":533.838821295,"data":"- [x] slope_in_range\n"}
+,{"stream_name":"stdout","time":533.838824196,"data":"- [x] two_of_three_seasons\n"}
+,{"stream_name":"stdout","time":533.838827156,"data":"- per-season ΔBrier: 2023-24 -0.001593, 2024-25 -0.001404, 2025-26 -0.001564\n"}
+,{"stream_name":"stdout","time":533.838830217,"data":"\n"}
+,{"stream_name":"stdout","time":533.83883303,"data":"## Bootstrap (ΔBrier vs champion, 95% CI)\n"}
+,{"stream_name":"stdout","time":533.838836049,"data":"\n"}
+,{"stream_name":"stdout","time":533.838838827,"data":"| model | cluster | mean | lo | hi | clusters |\n"}
+,{"stream_name":"stdout","time":533.838841799,"data":"|---|---|---:|---:|---:|---:|\n"}
+,{"stream_name":"stdout","time":533.838851776,"data":"| C1_logistic | game | +0.001803 | +0.001578 | +0.002022 | 3,478 |\n"}
+,{"stream_name":"stdout","time":533.83885531,"data":"| C1_logistic | player | +0.001799 | +0.001391 | +0.002215 | 746 |\n"}
+,{"stream_name":"stdout","time":533.838858394,"data":"| C2_gbm | game | -0.001520 | -0.001769 | -0.001279 | 3,478 |\n"}
+,{"stream_name":"stdout","time":533.838861407,"data":"| C2_gbm | player | -0.001519 | -0.001789 | -0.001249 | 746 |\n"}
+,{"stream_name":"stdout","time":533.838864387,"data":"| C2_core_ablation | game | -0.000736 | -0.000945 | -0.000532 | 3,478 |\n"}
+,{"stream_name":"stdout","time":533.838867402,"data":"| C2_core_ablation | player | -0.000735 | -0.000950 | -0.000519 | 746 |\n"}
+,{"stream_name":"stdout","time":533.838874952,"data":"\n"}
+,{"stream_name":"stdout","time":533.838877825,"data":"## Brier by line offset\n"}
+,{"stream_name":"stdout","time":533.83888077,"data":"\n"}
+,{"stream_name":"stderr","time":537.503502701,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":537.503538519,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":537.983780301,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":537.983819863,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":540.000009135,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":541.551466989,"data":"[NbConvertApp] Writing 410561 bytes to __results__.html\n"}
+]

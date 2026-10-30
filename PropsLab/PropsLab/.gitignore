@@ -1,0 +1,18 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/build/
+/app/build/
+.DS_Store
+
+# Local model weights are provisioned, never committed.
+*.gguf
+models/
+
+# Signing material and secrets — never committed.
+*.jks
+*.keystore
+keystore.properties
+local.properties
+.env

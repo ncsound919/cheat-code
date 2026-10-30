@@ -1,0 +1,21 @@
+{
+  "id": "tap919/propslab-challenger-table-vs-constrained-gbm",
+  "id_no": 141432039,
+  "title": "PropsLab challenger - table vs constrained GBM",
+  "code_file": "propslab-challenger-table-vs-constrained-gbm.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [],
+  "dataset_sources": [
+    "tap919/propslab-nba-prop-training"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-images/python@sha256:17b2fc7f27c25c6c2fd4230ec8e66097ab2b89fc88e1e4d6f338b72e1ee0bc3e",
+  "machine_shape": "None"
+}

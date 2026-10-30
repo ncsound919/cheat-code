@@ -1,0 +1,79 @@
+package com.propslab.data
+
+import com.propslab.domain.Markets
+import com.propslab.domain.Odds
+import com.propslab.domain.Outcome
+import com.propslab.domain.OutcomeProbabilities
+import com.propslab.domain.Side
+
+data class Driver(val label: String, val value: Double)
+
+data class PropUi(
+    val id: String,
+    val playerName: String,
+    val teamCode: String,
+    val gameId: String,
+    val matchup: String,
+    val startUtc: Long,
+    val market: String,
+    val book: String,
+    val line: Double?,
+    val overOdds: Int?,
+    val underOdds: Int?,
+    val quoteTimeUtc: Long,
+    val probabilities: OutcomeProbabilities?,
+    /** No-vig market probability of the over. */
+    val marketOver: Double?,
+    /** Model minus market for the over, in percentage points. */
+    val edgePts: Double?,
+    val reasons: List<String>,
+    val flags: List<String>,
+    val drivers: List<Driver>,
+    val explanation: String,
+    val modelVersion: String,
+    val schemaVersion: Int,
+    val featureCutoffUtc: Long,
+    val isFixture: Boolean,
+) {
+    val available: Boolean get() = probabilities != null && line != null && overOdds != null && underOdds != null
+    val lean: Side? get() = edgePts?.let { if (it >= 0) Side.OVER else Side.UNDER }
+}
+
+data class GameGroup(val id: String, val matchup: String, val startUtc: Long, val props: List<PropUi>)
+
+data class BetUi(
+    val id: String,
+    val playerName: String,
+    val teamCode: String,
+    val side: Side,
+    val line: Double,
+    val odds: Int,
+    val stake: Double,
+    val decidedUtc: Long,
+    val actual: Double?,
+    val outcome: Outcome?,
+    val profit: Double?,
+    val settledUtc: Long?,
+    val market: String = "player_points",
+    val book: String = "",
+) {
+    val isOpen: Boolean get() = outcome == null
+
+    /** The market in the words a book uses: "Points", "Rebounds", and so on. */
+    val marketLabel: String get() = Markets.label(market)
+
+    /** Decimal price of the bet, so stake and payout can be shown the way a slip does. */
+    val decimal: Double get() = Odds.americanToDecimal(odds)
+
+    /** Profit if the bet wins, in the same practice units as the stake. */
+    val toWin: Double get() = stake * (decimal - 1.0)
+
+    /** What the ticket returns if it wins, stake included. */
+    val toReturn: Double get() = stake * decimal
+}
+
+sealed interface PlaceResult {
+    data object Placed : PlaceResult
+    data object Duplicate : PlaceResult
+    data object Unavailable : PlaceResult
+}

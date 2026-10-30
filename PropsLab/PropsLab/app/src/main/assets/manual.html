@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cheat Code · User manual</title>
+<style>
+  :root {
+    --ink:#0b1018; --court:#121a27; --raised:#1a2434; --hairline:#263247;
+    --chalk:#edeae2; --dust:#98a3b5; --faint:#5e6b80;
+    --over:#58c7e6; --under:#f0a54b; --gain:#6fd3a0; --loss:#ef7a67; --caution:#e9c46a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; padding:0 20px 80px; background:var(--ink); color:var(--chalk);
+    font-family:"Manrope","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .shell { max-width:820px; margin:0 auto; }
+  header { display:flex; align-items:center; gap:14px; padding:28px 0 10px; }
+  header svg { width:44px; height:44px; }
+  header .name { font-family:"Trebuchet MS",system-ui,sans-serif; font-weight:700; letter-spacing:.02em; font-size:20px; }
+  header .tag { margin-left:auto; font-size:12px; color:var(--faint); }
+  .eyebrow { font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--over); margin:30px 0 8px; }
+  h1 { font-family:"Trebuchet MS",system-ui,sans-serif; font-size:44px; line-height:1.05; letter-spacing:-.03em; margin:6px 0 10px; }
+  h2 { font-family:"Trebuchet MS",system-ui,sans-serif; font-size:29px; letter-spacing:-.02em; margin:48px 0 8px; padding-top:26px; border-top:1px solid var(--hairline); }
+  h3 { font-size:18px; margin:26px 0 4px; letter-spacing:-.01em; }
+  p { color:var(--dust); margin:10px 0; }
+  strong { color:var(--chalk); font-weight:600; }
+  a { color:var(--over); text-decoration:none; }
+  ul, ol { color:var(--dust); padding-left:22px; }
+  li { margin:6px 0; }
+  figure { margin:22px 0; }
+  figure img { width:100%; max-width:420px; display:block; margin:0 auto; border-radius:22px; border:1px solid var(--hairline); }
+  figcaption { font-size:12px; color:var(--faint); text-align:center; margin-top:8px; }
+  .toc { display:grid; grid-template-columns:1fr 1fr; gap:6px 20px; border:1px solid var(--hairline); border-radius:18px; padding:18px 22px; background:var(--court); margin:24px 0 8px; }
+  .toc a { color:var(--dust); font-size:14px; }
+  .toc a:hover { color:var(--chalk); }
+  .callout { border-left:3px solid var(--over); background:var(--court); border-radius:0 14px 14px 0; padding:12px 16px; margin:18px 0; }
+  .callout.warn { border-left-color:var(--caution); }
+  .callout.good { border-left-color:var(--gain); }
+  .callout p { margin:4px 0; font-size:14px; }
+  .kv { width:100%; border-collapse:collapse; margin:14px 0; }
+  .kv td { padding:8px 10px; border-top:1px solid var(--hairline); vertical-align:top; font-size:14px; color:var(--dust); }
+  .kv td:first-child { color:var(--chalk); width:36%; font-weight:600; }
+  code { background:var(--raised); border:1px solid var(--hairline); border-radius:6px; padding:1px 5px; font-size:13px; color:var(--chalk); }
+  footer { border-top:1px solid var(--hairline); margin-top:46px; padding-top:20px; font-size:13px; color:var(--faint); }
+  @media (max-width:560px){ h1{font-size:34px} .toc{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <svg viewBox="0 0 512 512" aria-label="Cheat Code">
+    <rect width="512" height="512" rx="116" fill="#121a27"/>
+    <circle cx="256" cy="248" r="150" fill="none" stroke="#58c7e6" stroke-width="22" stroke-linecap="round" stroke-dasharray="542 942" transform="rotate(-90 256 248)"/>
+    <circle cx="256" cy="248" r="150" fill="none" stroke="#f0a54b" stroke-width="22" stroke-linecap="round" stroke-dasharray="262 942" transform="rotate(146 256 248)"/>
+    <circle cx="256" cy="248" r="150" fill="none" stroke="#5e6b80" stroke-width="22" stroke-linecap="round" stroke-dasharray="118 942" transform="rotate(256 256 248)"/>
+    <polyline points="184,300 236,252 282,284 336,206" fill="none" stroke="#edeae2" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="336" cy="206" r="13" fill="#6fd3a0"/>
+  </svg>
+  <span class="name">Cheat Code</span>
+  <span class="tag">Offline manual · v0.1</span>
+</header>
+
+<h1>Everything, without the app explaining itself.</h1>
+<p>This page replaces the walls of text that used to sit on the screens. The app shows numbers; the manual explains them. Screenshots are from the S25 build and use whichever real board that phone had that day.</p>
+
+<div class="toc">
+  <a href="#start">1. Start here</a>
+  <a href="#setup">2. Set up the feed</a>
+  <a href="#today">3. Today</a>
+  <a href="#best">4. Best bets</a>
+  <a href="#parlays">5. Parlays</a>
+  <a href="#sandbox">6. Sandbox and the gate</a>
+  <a href="#learning">7. Self-learning</a>
+  <a href="#bets">8. Bets</a>
+  <a href="#lab">9. Writing a strategy</a>
+  <a href="#models">10. Model shop</a>
+  <a href="#cards">11. Share cards</a>
+  <a href="#premium">12. Premium</a>
+  <a href="#updates">13. Updates and help</a>
+  <a href="#privacy">14. Account and privacy</a>
+  <a href="#trouble">15. Troubleshooting</a>
+  <a href="#glossary">16. Glossary</a>
+  <a href="#responsible">17. Responsible play</a>
+</div>
+
+<h2 id="start">1. Start here</h2>
+<p>Cheat Code is a <strong>paper-trading lab for NBA player props</strong>. It reads a board of prices, prices the same board with its own models, and logs every decision so it can check itself later. It never places a wager and cannot connect to a sportsbook account.</p>
+<p>Three rules explain almost everything the app does:</p>
+<ul>
+  <li><strong>One number, one owner.</strong> The books own the prices. The model owns the chance. Neither overwrites the other, and the gap between them is what gets bet.</li>
+  <li><strong>Nothing trades until it proves an edge.</strong> A formula must clear the sandbox gate before its picks reach the Best screen.</li>
+  <li><strong>A bad record is information.</strong> Every priced row is logged, including the ones the app dislikes, so the ledger can tell it when it is wrong.</li>
+</ul>
+<div class="callout">
+  <p><strong>Fixtures.</strong> On a fresh install the board is synthetic and labelled. It retires the first time a real sync writes prices.</p>
+</div>
+
+<h2 id="setup">2. Set up the feed</h2>
+<p>Open <strong>Lab → Live data</strong>. Two keys are enough: one for prop prices, one for box scores. Box scores have a keyless source (ESPN) so results can start immediately; prices need a provider key.</p>
+<table class="kv">
+  <tr><td>Prop prices</td><td>A read-only odds key. The default request is deliberately small because each market costs a credit.</td></tr>
+  <tr><td>Box scores</td><td>ESPN needs no key. BALLDONTLIE is the alternative for deeper history.</td></tr>
+  <tr><td>Injuries</td><td>The league's own report is read without a key. A manual note always outranks it.</td></tr>
+  <tr><td>Sync cadence</td><td>Every 30 minutes in the background; press <strong>Sync now</strong> for an immediate run.</td></tr>
+</table>
+<p>The first successful sync does three things: retires the fixtures, writes real prices to the Today board, and starts the learning ledger.</p>
+
+<h2 id="today">3. Today</h2>
+<figure><img src="img/01-today.png" alt="Today screen"><figcaption>Today: the board, the game markets, and the model's lean on every priced row.</figcaption></figure>
+<h3>What you are looking at</h3>
+<ul>
+  <li><strong>Board at a glance</strong> — how many estimates lean over and under, the single biggest model-versus-book gap, and the average book cut (hold).</li>
+  <li><strong>Game lines</strong> — moneyline, spread and total, each with the book's price and no-vig chance plus the model's chance and gap in points. A game is scored only when both teams have enough box scores.</li>
+  <li><strong>Prop rows</strong> — one player, one market, one line. The bar splits over / push / under, with a chalk tick at the market's own price. The distance between the tick and the end of the aqua bar is the edge.</li>
+</ul>
+<p>Sort by <strong>Game order</strong> to follow the slate, or <strong>Biggest edge</strong> to see where the model most disagrees with the market. Tapping a row opens the full explanation: both prices, the no-vig probability, the push mass and the flags.</p>
+
+<h2 id="best">4. Best bets</h2>
+<figure><img src="img/02-best.png" alt="Best bets screen"><figcaption>Best: what the promoted formula would take, and the game markets that compete with it.</figcaption></figure>
+<p>This screen answers one question: <em>if the live strategy took everything it liked today, what would that be?</em> The pick list is not curated by hand. It is the output of the formula that cleared the sandbox gate, applied to real quotes. A pick resting on fewer than eight games is marked, because a short sample is still a short sample.</p>
+<p>The <strong>game markets</strong> below the props are scored from team form, not copied from the book. Only sides with positive expected value are published, and each one says what the model projects.</p>
+
+<h2 id="parlays">5. Parlays</h2>
+<figure><img src="img/03-parlay.png" alt="Parlay builder"><figcaption>A three-leg ticket: three legs, one game each, with the chance and the price both stated.</figcaption></figure>
+<p>Best → <strong>Build</strong> opens the parlay builder. It produces a 3-leg, a 5-leg and (on Premium) a 10-leg ticket from the same ranked board.</p>
+<ul>
+  <li>The chance is the <strong>product of the legs' model probabilities</strong>, with each leg's push mass conditioned out.</li>
+  <li>The price is the product of the decimal odds. Ten legs at about 60% each multiply to roughly 0.6%, which is why the payout is large.</li>
+  <li>Every ticket reserves a game-market leg first, then fills with props: one per game while the board allows it, then one per player, then repeats.</li>
+  <li>Legs that share a game are correlated. The card says how many do, because the product is then an approximation.</li>
+</ul>
+<div class="callout warn">
+  <p><strong>Parlays multiply the margin too.</strong> A book's cut compounds with every leg. A five-leg ticket is a lottery ticket with a nicer font.</p>
+</div>
+
+<h2 id="sandbox">6. Sandbox and the gate</h2>
+<figure><img src="img/04-sandbox.png" alt="Sandbox screen"><figcaption>The fake bankroll, the promoted formula, and what it did on a season it has not seen.</figcaption></figure>
+<p>Every round builds a fresh simulated season (150 days, 80 props a day), runs every candidate formula over it with flat one-unit stakes, and gates the results.</p>
+<table class="kv">
+  <tr><td>400 bets</td><td>Enough decisions that a hot streak is not the whole story.</td></tr>
+  <tr><td>ROI above 1.5%</td><td>The simulated world is beatable, so a candidate that cannot clear this has found nothing.</td></tr>
+  <tr><td>t-statistic above 2.0</td><td>The profit is distinguishable from luck.</td></tr>
+  <tr><td>Drawdown under 45%</td><td>A formula that nearly ruins the bankroll is not usable, however it ends.</td></tr>
+  <tr><td>Hit rate above break-even</td><td>Measured at the prices it actually took, not at fair odds.</td></tr>
+</table>
+<p>The winning formula keeps the live book until it stops passing. Then it is retired and the best passing candidate replaces it. Every promotion and retirement is written to the audit trail, which sits behind the sandbox.</p>
+<p><strong>Run a round</strong> is safe to press repeatedly: every round uses a new seed, and the incumbent is only displaced when it genuinely fails.</p>
+
+<h2 id="learning">7. Self-learning</h2>
+<p>The Lab's <strong>Learning ledger</strong> card is the model's report card.</p>
+<ul>
+  <li>Every sync logs a paper decision on every priced row, props and game markets alike, at the line and price that were live.</li>
+  <li>Finished games settle those rows from real box scores. Nothing is filtered by confidence.</li>
+  <li>After 200 settled decisions per track, a Platt correction is fitted: a slope (is the model over- or under-confident?) and a shift.</li>
+  <li>The correction is applied to every future chance before it is published. Brier scores before and after the fit are recorded.</li>
+</ul>
+<div class="callout good">
+  <p><strong>Why this matters.</strong> A model can be directionally right and still badly priced. This loop fixes the pricing, not the story.</p>
+</div>
+
+<h2 id="bets">8. Bets</h2>
+<figure><img src="img/05-bets.png" alt="Paper ledger"><figcaption>The ledger: stake, price, result and profit, in practice units.</figcaption></figure>
+<p>Place a paper bet from any pick. It stores the line and price at decision time, so a later line move cannot rewrite history. One bet per pick and side. Settlement writes an audit event and never overwrites a result.</p>
+<p>Every row also shows the <strong>actual</strong> stat once the game is final, so a win and a near-miss look different.</p>
+
+<h2 id="lab">9. Writing a strategy</h2>
+<figure><img src="img/06-lab.png" alt="Strategy lab"><figcaption>The lab: one sentence in, a tested rule out.</figcaption></figure>
+<p>Type a belief the way you would say it: <em>“their defense decides this one”</em>, <em>“he goes under because the game gets away from them”</em>. The app turns it into:</p>
+<ul>
+  <li>a <strong>tilt</strong> — how far the belief moves the model's probability,</li>
+  <li>a <strong>side filter</strong> — over, under, or both,</li>
+  <li>a <strong>market scope</strong> — points, rebounds, assists, threes, PRA, or everything.</li>
+</ul>
+<p>The candidate is then tested on a fresh season like any other formula. You see the result in plain words first; the arithmetic is one tap away. A belief that does not survive is not hidden — it is reported as a failed test.</p>
+<p><strong>Lenses</strong> explains how each live formula changes the way a bet is read, in game terms.</p>
+
+<h2 id="models">10. Model shop</h2>
+<figure><img src="img/07-models.png" alt="Model shop"><figcaption>The shop measures first, then recommends: RAM, free disk, cores and ABI.</figcaption></figure>
+<p>The lab and the console can write in the phone's own words with no network. To do that they need weights.</p>
+<ol>
+  <li><strong>This phone</strong> reports memory, free storage, cores and CPU. It recommends a parameter band and a quantization. The storage rule is conservative: a model may use at most 55% of RAM, and 600 MB must remain free after a download.</li>
+  <li><strong>Suggested</strong> lists a curated shelf. Tap one to read its actual file list from the Hugging Face API, with real sizes and quantizations, each marked <em>Fits</em> or <em>Too big</em>.</li>
+  <li><strong>Get</strong> downloads into the app's private storage. The file is written as <code>.part</code> and only renamed when complete, so a half-download can never be loaded.</li>
+  <li><strong>Use</strong> makes a model active; <strong>Delete</strong> removes it.</li>
+</ol>
+<p><strong>Search</strong> looks across public GGUF repositories, most downloaded first. Nothing is uploaded and no Hugging Face account is needed.</p>
+<h3>Cloud fallback</h3>
+<p>Premium can point the app at any OpenAI-compatible endpoint for phones that cannot hold useful weights. The key is stored privately and shown only as its last four characters. <strong>Local weights always win</strong>: with a model installed, no prompt leaves the device even if a key is saved.</p>
+
+<h2 id="cards">11. Share cards</h2>
+<figure><img src="img/10-cards.png" alt="A share card"><figcaption>A 1080 × 1350 card, drawn on the phone from today's numbers.</figcaption></figure>
+<p>Four templates: <strong>Bet of the day</strong>, <strong>My bet</strong>, <strong>Settled</strong> and <strong>New strategy</strong>. Each one is assembled from the real board or ledger, never typed in by hand. Share sends the PNG to any app; Save to photos writes it to <code>Pictures/Cheat Code</code>.</p>
+<p>Free cards carry a small mark. Premium removes it.</p>
+
+<h2 id="premium">12. Premium</h2>
+<figure><img src="img/08-premium.png" alt="Premium screen"><figcaption>One plan, five dollars, and an honest list of what the free build keeps.</figcaption></figure>
+<p>Payment runs through Stripe's hosted checkout in the browser, so no card number ever reaches the app. After paying, paste the unlock code (<code>PL5-XXXX-XXXX-XXXX</code>) into <strong>Lab → Premium → Enter code</strong>.</p>
+<table class="kv">
+  <tr><td>Free</td><td>Everything analytical: the board, picks, game model, ledger, learning loop, on-device model, 3- and 5-leg parlays.</td></tr>
+  <tr><td>Premium</td><td>10-leg tickets, clean cards, cloud model fallback.</td></tr>
+  <tr><td>Trial</td><td>Seven days, once, no card.</td></tr>
+  <tr><td>Code format</td><td>The last four characters are a checksum of the first twelve. A typo is refused; a valid code unlocks offline.</td></tr>
+</table>
+<div class="callout warn">
+  <p><strong>During the beta</strong> codes are issued by hand from the receipt. The checksum proves a code was issued for this scheme, not that a payment happened; a licence server is the next step.</p>
+</div>
+
+<h2 id="updates">13. Updates and help</h2>
+<figure><img src="img/09-updates.png" alt="Updates and help"><figcaption>Updates, the manual, bug reports and the community, in one place.</figcaption></figure>
+<ul>
+  <li><strong>Check for updates</strong> reads the latest GitHub release and compares it with the installed version.</li>
+  <li><strong>Install update</strong> downloads the attached APK and hands it to Android's installer. Android always asks; the app cannot install silently.</li>
+  <li><strong>Read the manual offline</strong> opens this page from inside the APK.</li>
+  <li><strong>Email a bug report</strong> pre-fills the build, the phone model, the Android version and the active model.</li>
+</ul>
+
+<h2 id="privacy">14. Account and privacy</h2>
+<p>An account is optional and is used only to carry strategies between devices. Sign-in is a passwordless email code; there is no password to store or reset. The session token lives in private preferences and is never written to the database, the audit trail or a log line.</p>
+<p>Feeds are read-only. Keys are stored privately and are never displayed back. There is no analytics, no crash reporter and no advertising SDK in the app.</p>
+
+<h2 id="trouble">15. Troubleshooting</h2>
+<h3>The board is empty</h3>
+<p>Check the two keys under <strong>Lab → Live data</strong>, then press <strong>Sync now</strong>. If the price provider is out of credits, the screen says so instead of pretending.</p>
+<h3>“Only N games logged”</h3>
+<p>The player does not have four games in the stored box scores. The model refuses to publish an estimate rather than invent one. Another sync fixes it once results land.</p>
+<h3>The model will not load</h3>
+<p>Open <strong>Model shop</strong>. The card states the exact path it looked in and whether the native runtime loaded. A LoRA adapter is not a base model; it cannot run alone.</p>
+<h3>A download stopped</h3>
+<p>The partial file is discarded, never loaded. Free space and try again; the shop checks the byte count against the reported size.</p>
+<h3>An update says “no release published”</h3>
+<p>The release feed has no release yet, or this fork points at a different repository.</p>
+
+<h2 id="glossary">16. Glossary</h2>
+<table class="kv">
+  <tr><td>No-vig chance</td><td>The book's two prices with its margin removed. It is the market's honest opinion.</td></tr>
+  <tr><td>Edge (points)</td><td>Model chance minus no-vig chance, in percentage points.</td></tr>
+  <tr><td>EV</td><td>Expected value per unit staked, including the push mass.</td></tr>
+  <tr><td>Push</td><td>An integer line landing exactly. The stake returns; the bet neither wins nor loses.</td></tr>
+  <tr><td>Kelly</td><td>The growth-optimal stake for a known edge. The app uses a quarter of it, because the edge is an estimate.</td></tr>
+  <tr><td>Brier score</td><td>Mean squared error of probabilities. Lower is better; used to check a calibration.</td></tr>
+  <tr><td>Platt fit</td><td>A two-parameter correction (slope, shift) applied to a probability.</td></tr>
+  <tr><td>Tilt</td><td>A strategy's shift of the model's probability, in points, compiled from a sentence.</td></tr>
+  <tr><td>Gate</td><td>The five checks a formula must pass before it may trade the live board.</td></tr>
+</table>
+
+<h2 id="responsible">17. Responsible play</h2>
+<p>Cheat Code is analysis, not advice, and every bet it records is paper. A positive expected value is an estimate that can be wrong for a long time. Parlays compound the book's margin.</p>
+<p>If gambling stops being fun: <strong>National Problem Gambling Helpline, 1-800-522-4700</strong>. 18+.</p>
+
+<footer>
+  Cheat Code is not affiliated with the NBA or any sportsbook. Fonts: Bricolage Grotesque and Manrope, SIL OFL. Math X prompt text: MIT. <br>
+  Download, manual and pricing: cheat-code.vercel.app · tap4500@gmail.com
+</footer>
+
+</div>
+</body>
+</html>

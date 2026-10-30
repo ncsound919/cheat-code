@@ -1,0 +1,60 @@
+[{"stream_name":"stdout","time":6.701682378,"data":"[    0.0s] verifying dataset ...\n"}
+,{"stream_name":"stdout","time":6.70177503,"data":"[    0.0s] input: /kaggle/input/datasets/tap919/propslab-nba-prop-training\n"}
+,{"stream_name":"stdout","time":6.860126421,"data":"[    0.2s] PASS  dataset sha256 matches manifest  962376828535ff49\n"}
+,{"stream_name":"stdout","time":7.364902805,"data":"[    0.7s] PASS  row count  665,203\n"}
+,{"stream_name":"stdout","time":7.662103033,"data":"[    1.0s] PASS  no nulls  0 nulls\n"}
+,{"stream_name":"stdout","time":7.924857157,"data":"[    1.2s] PASS  fit rows  594,251\n"}
+,{"stream_name":"stdout","time":7.92489098,"data":"[    1.2s] PASS  holdout rows  70,952\n"}
+,{"stream_name":"stdout","time":7.97469798,"data":"[    1.3s] PASS  no season overlap  \n"}
+,{"stream_name":"stdout","time":7.974731252,"data":"[    1.3s] expanding grid ...\n"}
+,{"stream_name":"stdout","time":8.633265064,"data":"[    1.9s] fit grid (4159757, 12)  holdout grid (496664, 12)\n"}
+,{"stream_name":"stdout","time":8.63330261,"data":"[    1.9s] fitting champion table ...\n"}
+,{"stream_name":"stdout","time":8.682608515,"data":"[    2.0s] PASS  champion probabilities in (0,1)  min 1.55e-01 max 0.999999\n"}
+,{"stream_name":"stdout","time":8.682644202,"data":"[    2.0s] fitting C1 logistic (cross-fitted isotonic) ...\n"}
+,{"stream_name":"stdout","time":19.533276944,"data":"[   12.8s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4805 (7s)\n"}
+,{"stream_name":"stdout","time":25.647348758,"data":"[   18.9s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4828 (6s)\n"}
+,{"stream_name":"stdout","time":31.734824392,"data":"[   25.0s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4790 (6s)\n"}
+,{"stream_name":"stdout","time":37.99074645,"data":"[   31.3s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4809 (6s)\n"}
+,{"stream_name":"stdout","time":38.252311929,"data":"[   31.5s] fitting C2 constrained GBM (cross-fitted isotonic) ...\n"}
+,{"stream_name":"stdout","time":90.700644162,"data":"[   84.0s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4806 (50s)\n"}
+,{"stream_name":"stdout","time":139.889772426,"data":"[  133.2s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4823 (49s)\n"}
+,{"stream_name":"stdout","time":188.978071573,"data":"[  182.3s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4791 (49s)\n"}
+,{"stream_name":"stdout","time":237.838578962,"data":"[  231.1s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4816 (49s)\n"}
+,{"stream_name":"stdout","time":254.161268702,"data":"[  247.5s] fitting C2-core ablation (H4: do rest/opponent-defense matter?) ...\n"}
+,{"stream_name":"stdout","time":297.707778702,"data":"[  291.0s]     fold 1/4 rows=3,206,798 raw_va_mean=0.4817 (41s)\n"}
+,{"stream_name":"stdout","time":339.427358477,"data":"[  332.7s]     fold 2/4 rows=3,078,712 raw_va_mean=0.4794 (42s)\n"}
+,{"stream_name":"stdout","time":380.27771213,"data":"[  373.6s]     fold 3/4 rows=3,117,436 raw_va_mean=0.4812 (41s)\n"}
+,{"stream_name":"stdout","time":420.62174559,"data":"[  413.9s]     fold 4/4 rows=3,076,325 raw_va_mean=0.4808 (40s)\n"}
+,{"stream_name":"stdout","time":437.155489661,"data":"[  430.5s] scoring ...\n"}
+,{"stream_name":"stdout","time":437.155998647,"data":"[  430.5s] PASS  champion_table finite  \n"}
+,{"stream_name":"stdout","time":437.15680781,"data":"[  430.5s] PASS  champion_table in (0,1)  \n"}
+,{"stream_name":"stdout","time":437.522694809,"data":"[  430.8s] PASS  C1_logistic finite  \n"}
+,{"stream_name":"stdout","time":437.523524901,"data":"[  430.8s] PASS  C1_logistic in (0,1)  \n"}
+,{"stream_name":"stdout","time":437.82423443,"data":"[  431.1s] PASS  C2_gbm finite  \n"}
+,{"stream_name":"stdout","time":437.825080949,"data":"[  431.1s] PASS  C2_gbm in (0,1)  \n"}
+,{"stream_name":"stdout","time":438.196367307,"data":"[  431.5s] PASS  C2_core_ablation finite  \n"}
+,{"stream_name":"stdout","time":438.197023994,"data":"[  431.5s] PASS  C2_core_ablation in (0,1)  \n"}
+,{"stream_name":"stdout","time":438.553107598,"data":"[  431.9s] PASS  B0_base_rate finite  \n"}
+,{"stream_name":"stdout","time":438.55391968,"data":"[  431.9s] PASS  B0_base_rate in (0,1)  \n"}
+,{"stream_name":"stdout","time":438.833279455,"data":"[  432.1s] PASS  B0 base-rate Brier near 0.25  0.2294\n"}
+,{"stream_name":"stdout","time":439.436447037,"data":"[  432.7s] PASS  champion Brier at delta=0 within 0.02 of prior 0.2486  delta0=0.249044 pooled=0.226308\n"}
+,{"stream_name":"stdout","time":439.703226159,"data":"[  433.0s] PASS  GBM monotonicity violations \u003c 0.5%  0.000% (max +0.00e+00)\n"}
+,{"stream_name":"stdout","time":439.703272434,"data":"[  433.0s] bootstrap ...\n"}
+,{"stream_name":"stdout","time":442.197419538,"data":"[  435.5s]   C1_logistic vs champion, game-clustered: +0.001803 [+0.001578, +0.002022]\n"}
+,{"stream_name":"stdout","time":442.812880362,"data":"[  436.1s]   C1_logistic vs champion, player-clustered: +0.001799 [+0.001391, +0.002215]\n"}
+,{"stream_name":"stdout","time":445.282675907,"data":"[  438.6s]   C2_gbm vs champion, game-clustered: -0.001520 [-0.001769, -0.001279]\n"}
+,{"stream_name":"stdout","time":445.902040893,"data":"[  439.2s]   C2_gbm vs champion, player-clustered: -0.001519 [-0.001789, -0.001249]\n"}
+,{"stream_name":"stdout","time":448.40625695,"data":"[  441.7s]   C2_core_ablation vs champion, game-clustered: -0.000736 [-0.000945, -0.000532]\n"}
+,{"stream_name":"stdout","time":449.026203341,"data":"[  442.3s]   C2_core_ablation vs champion, player-clustered: -0.000735 [-0.000950, -0.000519]\n"}
+,{"stream_name":"stdout","time":449.923255726,"data":"[  443.2s] GBM export failed: ModuleNotFoundError(\"No module named 'export_gbm'\")\n"}
+,{"stream_name":"stderr","time":449.924438303,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":449.924648357,"data":"  File \"/kaggle/src/script.py\", line 554, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":449.924659709,"data":"    from export_gbm import export as _export_gbm\n"}
+,{"stream_name":"stderr","time":449.924664056,"data":"ModuleNotFoundError: No module named 'export_gbm'\n"}
+,{"stream_name":"stderr","time":453.304581561,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":453.304625241,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":453.788335419,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":453.788364642,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":456.47278677,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":458.024415311,"data":"[NbConvertApp] Writing 416106 bytes to __results__.html\n"}
+]

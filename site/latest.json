@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "name": "Cheat Code 1.0.0",
+  "published": "2026-10-30",
+  "apk": "cheat-code.apk",
+  "page": "https://cheat-code.vercel.app/download.html",
+  "size": 27337224,
+  "sha256": "122a9aa911efe8caf3466f3fcc981c31c05cd1595c248db0e0dafa6c6047527e",
+  "notes": "First public build. Signed release, arm64 only, Android 10 or newer. Paper bets only; no account required."
+}

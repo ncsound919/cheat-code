@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Your Cheat Code licence</title>
+<meta name="theme-color" content="#0b1018">
+<link rel="canonical" href="https://cheat-code.vercel.app/welcome.html">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bricolage-variable.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head" data-head>
+  <div class="wrap head-inner">
+    <a class="brand" href="index.html" aria-label="Cheat Code home">
+      <img src="logo.svg" alt="" width="38" height="38">
+      <span>Cheat Code</span>
+    </a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-btn>
+      <span class="menu-lines" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr-only">Menu</span>
+    </button>
+    <nav class="site-menu" id="site-menu" data-menu>
+      <a href="index.html">Home</a>
+      <a href="manual.html">Manual</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a class="nav-download" href="download.html">Get the app
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="subpage">
+  <div class="wrap">
+    <div class="narrow">
+      <div class="eyebrow"><span class="pulse"></span> Premium</div>
+      <h1>Thank you.</h1>
+      <p class="lede">This page turns your Stripe checkout into the code the app unlocks with. Keep it somewhere safe — the code does not expire while the subscription is active.</p>
+
+      <div class="panel">
+        <p id="state" class="status">Looking up your checkout…</p>
+        <div id="result" hidden>
+          <p>Paste this into <strong>Premium → Have a code?</strong> in the app:</p>
+          <code class="code" id="code"></code>
+          <div class="row">
+            <button class="btn gain" id="copy" type="button">Copy code</button>
+            <a class="btn" id="mail" href="#">Email it to me</a>
+            <a class="btn" href="cheat-code.apk" hidden id="apk">Download the app</a>
+          </div>
+          <dl class="facts">
+            <dt>Billed to</dt><dd id="email"></dd>
+            <dt>Status</dt><dd id="status"></dd>
+            <dt id="date-label">Trial ends</dt><dd id="date"></dd>
+          </dl>
+        </div>
+        <p id="fallback" hidden>Open this page from the link Stripe sent you after checkout, or start a new subscription from the <a href="index.html#pricing">pricing section</a>.</p>
+      </div>
+
+      <h3>What happens next</h3>
+      <ol class="steps-list">
+        <li>The app stores the code on the phone. It keeps working with no network.</li>
+        <li>Seven days free, then $5 a month through Stripe. Cancel from the receipt Stripe emails you.</li>
+        <li>If you reinstall, paste the same code again — it is derived from your email, so it never changes.</li>
+      </ol>
+      <p class="micro micro-gap-lg">Questions or a code that will not take? Email <a href="mailto:tap4500@gmail.com">tap4500@gmail.com</a> with the address you paid with.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <a class="brand" href="index.html"><img src="logo.svg" alt="" width="32" height="32"><span>Cheat Code</span></a>
+      <p class="fineprint">Local-first analysis for NBA player props. Paper bets only. 18+.</p>
+    </div>
+    <div class="foot-links">
+      <span>Product</span>
+      <a href="index.html">Home</a>
+      <a href="manual.html">User manual</a>
+      <a href="download.html">Download</a>
+      <a href="index.html#pricing">Pricing</a>
+    </div>
+    <div class="foot-links">
+      <span>Contact</span>
+      <a href="mailto:tap4500@gmail.com">tap4500@gmail.com</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Cheat Code · build 1.0.0</span>
+    <span>Built for the board, not the hype.</span>
+  </div>
+</footer>
+
+<script src="site.js" defer></script>
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var sessionId = (params.get('session_id') || '').trim();
+    var state = document.getElementById('state');
+    var result = document.getElementById('result');
+    var fallback = document.getElementById('fallback');
+
+    function fail(message) {
+      state.textContent = message;
+      state.className = 'status bad';
+      fallback.hidden = false;
+    }
+
+    if (!sessionId) {
+      fail('No checkout was attached to this link.');
+      return;
+    }
+
+    fetch('/api/licence?session_id=' + encodeURIComponent(sessionId))
+      .then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          return { ok: response.ok, body: body };
+        });
+      })
+      .then(function (answer) {
+        var body = answer.body;
+        if (!answer.ok || !body.code) throw new Error(body.error || 'That checkout could not be read.');
+        state.textContent = 'Your code is ready.';
+        state.className = 'status good';
+        document.getElementById('code').textContent = body.code;
+        document.getElementById('email').textContent = body.email;
+        document.getElementById('status').textContent = body.status;
+        var when = body.trialEnds || body.renews;
+        if (when) {
+          document.getElementById('date').textContent = new Date(when).toLocaleDateString(undefined, { dateStyle: 'medium' });
+        } else {
+          document.getElementById('date-label').hidden = true;
+          document.getElementById('date').hidden = true;
+        }
+        var mail = document.getElementById('mail');
+        mail.href = 'mailto:' + encodeURIComponent(body.email) +
+          '?subject=' + encodeURIComponent('Your Cheat Code Premium code') +
+          '&body=' + encodeURIComponent('Your code: ' + body.code + '\n\nPaste it into Premium → Have a code? in the app.');
+        result.hidden = false;
+        document.getElementById('copy').addEventListener('click', function (event) {
+          navigator.clipboard.writeText(body.code).then(function () {
+            event.target.textContent = 'Copied';
+          }).catch(function () {
+            event.target.textContent = 'Select the code above';
+          });
+        });
+      })
+      .catch(function (error) { fail(error.message); });
+  }());
+</script>
+</body>
+</html>
