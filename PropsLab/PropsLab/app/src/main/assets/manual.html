@@ -61,7 +61,7 @@
     <circle cx="336" cy="206" r="13" fill="#6fd3a0"/>
   </svg>
   <span class="name">Cheat Code</span>
-  <span class="tag">Offline manual · v1.1.1</span>
+  <span class="tag">Offline manual · v1.1.2</span>
 </header>
 
 <h1>Everything, without the app explaining itself.</h1>
@@ -165,8 +165,10 @@
 </div>
 
 <h2 id="bets">8. Bets</h2>
-<figure><img src="img/05-bets.png" alt="Paper ledger"><figcaption>The ledger: stake, price, result and profit, in practice units.</figcaption></figure>
-<p>Place a paper bet from any pick. It stores the line and price at decision time, so a later line move cannot rewrite history. One bet per pick and side. Settlement writes an audit event and never overwrites a result.</p>
+<figure><img src="img/05-bets.png" alt="Paper ledger"><figcaption>The practice ledger: bankroll, formula tags, results and the record behind them.</figcaption></figure>
+<p>The Bets tab is a <strong>250-unit practice account</strong>. Place a fake bet from the board, choose a stake and, if you want, tag it to a formula. A stake is reserved while the bet is open; recording the result releases it and adds the profit or loss. The account cannot stake more than it has, and it never contacts a sportsbook.</p>
+<p>The ledger keeps the line and price at decision time, so a later line move cannot rewrite history. One bet per pick and side. Every row shows its formula tag, and the summary shows the account balance, record, win rate and return. <strong>Filter the history</strong> to one formula when you want to judge that formula alone. <strong>Reset</strong> clears only this account and returns it to 250 units; the formula sandbox keeps its own separate bankroll.</p>
+<p>The performance card switches between three views: the <strong>bankroll</strong> line, <strong>formula</strong> results, and <strong>self-learning</strong>. The formula view combines your tagged bets with the formula live book, so a formula with no settled results reads as still being tested. The learning view shows the fitted Platt correction and the Brier score before and after it. Under every view, a short paragraph names the one adjustment the record supports; it never changes a formula by itself.</p>
 <p>Every row also shows the <strong>actual</strong> stat once the game is final, so a win and a near-miss look different.</p>
 
 <h2 id="lab">9. Writing a strategy</h2>

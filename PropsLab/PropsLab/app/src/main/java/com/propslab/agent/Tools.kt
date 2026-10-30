@@ -118,7 +118,7 @@ data class AgentProp(
     fun oddsFor(side: Side): Int? = if (side == Side.OVER) overOdds else underOdds
 }
 
-enum class PlaceOutcome { PLACED, DUPLICATE, UNAVAILABLE }
+enum class PlaceOutcome { PLACED, DUPLICATE, UNAVAILABLE, INSUFFICIENT_BANKROLL }
 
 /**
  * The live state a tool may use to fill arguments the model left out.

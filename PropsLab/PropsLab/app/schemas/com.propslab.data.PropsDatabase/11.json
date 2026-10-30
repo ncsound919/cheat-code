@@ -1,0 +1,2296 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 11,
+    "identityHash": "bebdf2fbfa5b5cf28f3e663d94b30163",
+    "entities": [
+      {
+        "tableName": "games",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startUtc` INTEGER NOT NULL, `homeCode` TEXT NOT NULL, `awayCode` TEXT NOT NULL, `status` TEXT NOT NULL, `externalId` TEXT, `homeName` TEXT NOT NULL DEFAULT '', `awayName` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startUtc",
+            "columnName": "startUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "homeCode",
+            "columnName": "homeCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "awayCode",
+            "columnName": "awayCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "externalId",
+            "columnName": "externalId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "homeName",
+            "columnName": "homeName",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "awayName",
+            "columnName": "awayName",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "players",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `teamCode` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teamCode",
+            "columnName": "teamCode",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "odds_snapshots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `gameId` TEXT NOT NULL, `playerId` TEXT NOT NULL, `market` TEXT NOT NULL, `book` TEXT NOT NULL, `line` REAL, `overOdds` INTEGER, `underOdds` INTEGER, `quoteTimeUtc` INTEGER NOT NULL, `source` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameId",
+            "columnName": "gameId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerId",
+            "columnName": "playerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "book",
+            "columnName": "book",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "overOdds",
+            "columnName": "overOdds",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "underOdds",
+            "columnName": "underOdds",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "quoteTimeUtc",
+            "columnName": "quoteTimeUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_odds_snapshots_gameId",
+            "unique": false,
+            "columnNames": [
+              "gameId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_odds_snapshots_gameId` ON `${TABLE_NAME}` (`gameId`)"
+          },
+          {
+            "name": "index_odds_snapshots_playerId",
+            "unique": false,
+            "columnNames": [
+              "playerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_odds_snapshots_playerId` ON `${TABLE_NAME}` (`playerId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "predictions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `quoteId` TEXT NOT NULL, `gameId` TEXT NOT NULL, `playerId` TEXT NOT NULL, `market` TEXT NOT NULL, `modelVersion` TEXT NOT NULL, `featureSchemaVersion` INTEGER NOT NULL, `featureCutoffUtc` INTEGER NOT NULL, `pOver` REAL, `pPush` REAL, `pUnder` REAL, `status` TEXT NOT NULL, `unavailableReasons` TEXT NOT NULL, `qualityFlags` TEXT NOT NULL, `drivers` TEXT NOT NULL, `explanation` TEXT NOT NULL, `createdUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteId",
+            "columnName": "quoteId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameId",
+            "columnName": "gameId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerId",
+            "columnName": "playerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelVersion",
+            "columnName": "modelVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "featureSchemaVersion",
+            "columnName": "featureSchemaVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "featureCutoffUtc",
+            "columnName": "featureCutoffUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pOver",
+            "columnName": "pOver",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pPush",
+            "columnName": "pPush",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pUnder",
+            "columnName": "pUnder",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unavailableReasons",
+            "columnName": "unavailableReasons",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qualityFlags",
+            "columnName": "qualityFlags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "drivers",
+            "columnName": "drivers",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "explanation",
+            "columnName": "explanation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdUtc",
+            "columnName": "createdUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_predictions_quoteId",
+            "unique": false,
+            "columnNames": [
+              "quoteId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_predictions_quoteId` ON `${TABLE_NAME}` (`quoteId`)"
+          },
+          {
+            "name": "index_predictions_gameId",
+            "unique": false,
+            "columnNames": [
+              "gameId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_predictions_gameId` ON `${TABLE_NAME}` (`gameId`)"
+          },
+          {
+            "name": "index_predictions_playerId",
+            "unique": false,
+            "columnNames": [
+              "playerId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_predictions_playerId` ON `${TABLE_NAME}` (`playerId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "paper_bets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `predictionId` TEXT NOT NULL, `side` TEXT NOT NULL, `quotedOdds` INTEGER NOT NULL, `line` REAL NOT NULL, `stakeUnits` REAL NOT NULL, `decidedUtc` INTEGER NOT NULL, `formulaId` TEXT NOT NULL DEFAULT '', `formulaLabel` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "predictionId",
+            "columnName": "predictionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quotedOdds",
+            "columnName": "quotedOdds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stakeUnits",
+            "columnName": "stakeUnits",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decidedUtc",
+            "columnName": "decidedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "formulaId",
+            "columnName": "formulaId",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "formulaLabel",
+            "columnName": "formulaLabel",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_paper_bets_predictionId",
+            "unique": false,
+            "columnNames": [
+              "predictionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_paper_bets_predictionId` ON `${TABLE_NAME}` (`predictionId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "settlements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`betId` TEXT NOT NULL, `actual` REAL NOT NULL, `outcome` TEXT NOT NULL, `profitUnits` REAL NOT NULL, `ruleVersion` TEXT NOT NULL, `settledUtc` INTEGER NOT NULL, `reconciliation` TEXT NOT NULL, PRIMARY KEY(`betId`))",
+        "fields": [
+          {
+            "fieldPath": "betId",
+            "columnName": "betId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actual",
+            "columnName": "actual",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profitUnits",
+            "columnName": "profitUnits",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ruleVersion",
+            "columnName": "ruleVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "settledUtc",
+            "columnName": "settledUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reconciliation",
+            "columnName": "reconciliation",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "betId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "model_versions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`version` TEXT NOT NULL, `artifactHash` TEXT NOT NULL, `schemaVersion` INTEGER NOT NULL, `evalStatus` TEXT NOT NULL, `importedUtc` INTEGER NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY(`version`))",
+        "fields": [
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artifactHash",
+            "columnName": "artifactHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schemaVersion",
+            "columnName": "schemaVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evalStatus",
+            "columnName": "evalStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importedUtc",
+            "columnName": "importedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "active",
+            "columnName": "active",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "version"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "audit_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ts` INTEGER NOT NULL, `kind` TEXT NOT NULL, `subjectId` TEXT NOT NULL, `detail` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ts",
+            "columnName": "ts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subjectId",
+            "columnName": "subjectId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detail",
+            "columnName": "detail",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "formula_runs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `params` TEXT NOT NULL, `tier` TEXT NOT NULL, `bets` INTEGER NOT NULL, `wins` INTEGER NOT NULL, `losses` INTEGER NOT NULL, `pushes` INTEGER NOT NULL, `staked` REAL NOT NULL, `profit` REAL NOT NULL, `roi` REAL NOT NULL, `tStat` REAL NOT NULL, `maxDrawdown` REAL NOT NULL, `finalBankroll` REAL NOT NULL, `verdict` TEXT NOT NULL, `reasons` TEXT NOT NULL, `round` INTEGER NOT NULL, `updatedUtc` INTEGER NOT NULL, `historyVerdict` TEXT NOT NULL, `historyBets` INTEGER NOT NULL, `historyRoi` REAL NOT NULL, `historyNote` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "params",
+            "columnName": "params",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tier",
+            "columnName": "tier",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bets",
+            "columnName": "bets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wins",
+            "columnName": "wins",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "losses",
+            "columnName": "losses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pushes",
+            "columnName": "pushes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "staked",
+            "columnName": "staked",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "roi",
+            "columnName": "roi",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tStat",
+            "columnName": "tStat",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxDrawdown",
+            "columnName": "maxDrawdown",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finalBankroll",
+            "columnName": "finalBankroll",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verdict",
+            "columnName": "verdict",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reasons",
+            "columnName": "reasons",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round",
+            "columnName": "round",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "historyVerdict",
+            "columnName": "historyVerdict",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "historyBets",
+            "columnName": "historyBets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "historyRoi",
+            "columnName": "historyRoi",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "historyNote",
+            "columnName": "historyNote",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sandbox_trades",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `formulaId` TEXT NOT NULL, `predictionId` TEXT NOT NULL, `playerName` TEXT NOT NULL, `side` TEXT NOT NULL, `line` REAL NOT NULL, `odds` INTEGER NOT NULL, `stake` REAL NOT NULL, `outcome` TEXT, `profit` REAL, `startUtc` INTEGER NOT NULL, `placedUtc` INTEGER NOT NULL, `settledUtc` INTEGER, `synthetic` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "formulaId",
+            "columnName": "formulaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "predictionId",
+            "columnName": "predictionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "odds",
+            "columnName": "odds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stake",
+            "columnName": "stake",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "startUtc",
+            "columnName": "startUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "placedUtc",
+            "columnName": "placedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "settledUtc",
+            "columnName": "settledUtc",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "synthetic",
+            "columnName": "synthetic",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sandbox_trades_formulaId",
+            "unique": false,
+            "columnNames": [
+              "formulaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sandbox_trades_formulaId` ON `${TABLE_NAME}` (`formulaId`)"
+          },
+          {
+            "name": "index_sandbox_trades_predictionId",
+            "unique": false,
+            "columnNames": [
+              "predictionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sandbox_trades_predictionId` ON `${TABLE_NAME}` (`predictionId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sandbox_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `round` INTEGER NOT NULL, `seed` INTEGER NOT NULL, `lastRunUtc` INTEGER NOT NULL, `promotedId` TEXT, `promotedLabel` TEXT, `note` TEXT NOT NULL, `bankroll` REAL NOT NULL, `peak` REAL NOT NULL, `bets` INTEGER NOT NULL, `profit` REAL NOT NULL, `autoRun` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round",
+            "columnName": "round",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seed",
+            "columnName": "seed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastRunUtc",
+            "columnName": "lastRunUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "promotedId",
+            "columnName": "promotedId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "promotedLabel",
+            "columnName": "promotedLabel",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bankroll",
+            "columnName": "bankroll",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "peak",
+            "columnName": "peak",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bets",
+            "columnName": "bets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "autoRun",
+            "columnName": "autoRun",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "player_game_stats",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `eventId` TEXT NOT NULL, `playedUtc` INTEGER NOT NULL, `playerKey` TEXT NOT NULL, `playerName` TEXT NOT NULL, `teamAbbr` TEXT NOT NULL, `points` INTEGER NOT NULL, `rebounds` INTEGER NOT NULL, `assists` INTEGER NOT NULL, `threes` INTEGER NOT NULL, `minutes` INTEGER NOT NULL, `fetchedUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eventId",
+            "columnName": "eventId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playedUtc",
+            "columnName": "playedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerKey",
+            "columnName": "playerKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teamAbbr",
+            "columnName": "teamAbbr",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "points",
+            "columnName": "points",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rebounds",
+            "columnName": "rebounds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assists",
+            "columnName": "assists",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "threes",
+            "columnName": "threes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minutes",
+            "columnName": "minutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedUtc",
+            "columnName": "fetchedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_player_game_stats_playerKey",
+            "unique": false,
+            "columnNames": [
+              "playerKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_player_game_stats_playerKey` ON `${TABLE_NAME}` (`playerKey`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "player_results",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`predictionId` TEXT NOT NULL, `market` TEXT NOT NULL, `actual` REAL NOT NULL, `statId` TEXT NOT NULL, `recordedUtc` INTEGER NOT NULL, PRIMARY KEY(`predictionId`))",
+        "fields": [
+          {
+            "fieldPath": "predictionId",
+            "columnName": "predictionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actual",
+            "columnName": "actual",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statId",
+            "columnName": "statId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedUtc",
+            "columnName": "recordedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "predictionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_player_results_recordedUtc",
+            "unique": false,
+            "columnNames": [
+              "recordedUtc"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_player_results_recordedUtc` ON `${TABLE_NAME}` (`recordedUtc`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "feed_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `lastPropsSyncUtc` INTEGER NOT NULL, `lastResultsSyncUtc` INTEGER NOT NULL, `propsNote` TEXT NOT NULL, `resultNote` TEXT NOT NULL, `signalNote` TEXT NOT NULL DEFAULT '', `creditsRemaining` INTEGER, `quotesWritten` INTEGER NOT NULL, `predictionsScored` INTEGER NOT NULL, `resultsRecorded` INTEGER NOT NULL, `fixturesRetired` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastPropsSyncUtc",
+            "columnName": "lastPropsSyncUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastResultsSyncUtc",
+            "columnName": "lastResultsSyncUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propsNote",
+            "columnName": "propsNote",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultNote",
+            "columnName": "resultNote",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "signalNote",
+            "columnName": "signalNote",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "creditsRemaining",
+            "columnName": "creditsRemaining",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "quotesWritten",
+            "columnName": "quotesWritten",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "predictionsScored",
+            "columnName": "predictionsScored",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultsRecorded",
+            "columnName": "resultsRecorded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fixturesRetired",
+            "columnName": "fixturesRetired",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "availability_signals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `playerKey` TEXT NOT NULL, `playerName` TEXT NOT NULL, `status` TEXT NOT NULL, `detail` TEXT NOT NULL, `source` TEXT NOT NULL, `headline` TEXT NOT NULL, `url` TEXT NOT NULL, `observedUtc` INTEGER NOT NULL, `expiresUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerKey",
+            "columnName": "playerKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detail",
+            "columnName": "detail",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "headline",
+            "columnName": "headline",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "observedUtc",
+            "columnName": "observedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresUtc",
+            "columnName": "expiresUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_availability_signals_playerKey",
+            "unique": false,
+            "columnNames": [
+              "playerKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_availability_signals_playerKey` ON `${TABLE_NAME}` (`playerKey`)"
+          },
+          {
+            "name": "index_availability_signals_expiresUtc",
+            "unique": false,
+            "columnNames": [
+              "expiresUtc"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_availability_signals_expiresUtc` ON `${TABLE_NAME}` (`expiresUtc`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "history_props",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `playedUtc` INTEGER NOT NULL, `playerKey` TEXT NOT NULL, `playerName` TEXT NOT NULL, `market` TEXT NOT NULL, `line` REAL NOT NULL, `overOdds` INTEGER NOT NULL, `underOdds` INTEGER NOT NULL, `pOver` REAL NOT NULL, `pPush` REAL NOT NULL, `actual` REAL NOT NULL, `source` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playedUtc",
+            "columnName": "playedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerKey",
+            "columnName": "playerKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overOdds",
+            "columnName": "overOdds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "underOdds",
+            "columnName": "underOdds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pOver",
+            "columnName": "pOver",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pPush",
+            "columnName": "pPush",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actual",
+            "columnName": "actual",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_history_props_market",
+            "unique": false,
+            "columnNames": [
+              "market"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_history_props_market` ON `${TABLE_NAME}` (`market`)"
+          },
+          {
+            "name": "index_history_props_playedUtc",
+            "unique": false,
+            "columnNames": [
+              "playedUtc"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_history_props_playedUtc` ON `${TABLE_NAME}` (`playedUtc`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "console_turns",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `role` TEXT NOT NULL, `kind` TEXT NOT NULL, `text` TEXT NOT NULL, `toolName` TEXT, `createdUtc` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toolName",
+            "columnName": "toolName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "createdUtc",
+            "columnName": "createdUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "claim_formulas",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `claim` TEXT NOT NULL, `name` TEXT NOT NULL, `factorTag` TEXT NOT NULL, `headline` TEXT NOT NULL, `lens` TEXT NOT NULL, `formulaId` TEXT NOT NULL, `status` TEXT NOT NULL, `bets` INTEGER NOT NULL, `wins` INTEGER NOT NULL, `losses` INTEGER NOT NULL, `profit` REAL NOT NULL, `roi` REAL NOT NULL, `tStat` REAL NOT NULL, `maxDrawdown` REAL NOT NULL, `passed` INTEGER NOT NULL, `plain` TEXT NOT NULL, `boardNote` TEXT NOT NULL, `gameTerms` TEXT NOT NULL, `falsifier` TEXT NOT NULL, `subject` TEXT, `deepVerdict` TEXT NOT NULL, `deepNote` TEXT NOT NULL, `deepAtUtc` INTEGER NOT NULL, `createdUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "claim",
+            "columnName": "claim",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "factorTag",
+            "columnName": "factorTag",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "headline",
+            "columnName": "headline",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lens",
+            "columnName": "lens",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "formulaId",
+            "columnName": "formulaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bets",
+            "columnName": "bets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wins",
+            "columnName": "wins",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "losses",
+            "columnName": "losses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "roi",
+            "columnName": "roi",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tStat",
+            "columnName": "tStat",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxDrawdown",
+            "columnName": "maxDrawdown",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passed",
+            "columnName": "passed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plain",
+            "columnName": "plain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "boardNote",
+            "columnName": "boardNote",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameTerms",
+            "columnName": "gameTerms",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "falsifier",
+            "columnName": "falsifier",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "deepVerdict",
+            "columnName": "deepVerdict",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deepNote",
+            "columnName": "deepNote",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deepAtUtc",
+            "columnName": "deepAtUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdUtc",
+            "columnName": "createdUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "game_lines",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `gameId` TEXT NOT NULL, `book` TEXT NOT NULL, `market` TEXT NOT NULL, `side` TEXT NOT NULL, `line` REAL, `price` INTEGER NOT NULL, `quoteTimeUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameId",
+            "columnName": "gameId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "book",
+            "columnName": "book",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "price",
+            "columnName": "price",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteTimeUtc",
+            "columnName": "quoteTimeUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_game_lines_gameId",
+            "unique": false,
+            "columnNames": [
+              "gameId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_game_lines_gameId` ON `${TABLE_NAME}` (`gameId`)"
+          },
+          {
+            "name": "index_game_lines_market",
+            "unique": false,
+            "columnNames": [
+              "market"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_game_lines_market` ON `${TABLE_NAME}` (`market`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "learning_bets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `track` TEXT NOT NULL, `market` TEXT NOT NULL, `gameId` TEXT NOT NULL, `refId` TEXT NOT NULL, `subject` TEXT NOT NULL, `homeCode` TEXT NOT NULL, `awayCode` TEXT NOT NULL, `side` TEXT NOT NULL, `line` REAL NOT NULL, `odds` INTEGER NOT NULL, `pModel` REAL NOT NULL, `pPush` REAL NOT NULL, `pMarket` REAL, `edgePts` REAL, `confidence` TEXT NOT NULL, `stake` REAL NOT NULL, `outcome` TEXT, `profit` REAL, `startUtc` INTEGER NOT NULL, `loggedUtc` INTEGER NOT NULL, `settledUtc` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "track",
+            "columnName": "track",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "market",
+            "columnName": "market",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameId",
+            "columnName": "gameId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "refId",
+            "columnName": "refId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subject",
+            "columnName": "subject",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "homeCode",
+            "columnName": "homeCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "awayCode",
+            "columnName": "awayCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "side",
+            "columnName": "side",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "odds",
+            "columnName": "odds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pModel",
+            "columnName": "pModel",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pPush",
+            "columnName": "pPush",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pMarket",
+            "columnName": "pMarket",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "edgePts",
+            "columnName": "edgePts",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stake",
+            "columnName": "stake",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "outcome",
+            "columnName": "outcome",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "profit",
+            "columnName": "profit",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "startUtc",
+            "columnName": "startUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "loggedUtc",
+            "columnName": "loggedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "settledUtc",
+            "columnName": "settledUtc",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_learning_bets_track",
+            "unique": false,
+            "columnNames": [
+              "track"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_learning_bets_track` ON `${TABLE_NAME}` (`track`)"
+          },
+          {
+            "name": "index_learning_bets_outcome",
+            "unique": false,
+            "columnNames": [
+              "outcome"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_learning_bets_outcome` ON `${TABLE_NAME}` (`outcome`)"
+          },
+          {
+            "name": "index_learning_bets_gameId",
+            "unique": false,
+            "columnNames": [
+              "gameId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_learning_bets_gameId` ON `${TABLE_NAME}` (`gameId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "model_calibration",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`track` TEXT NOT NULL, `slope` REAL NOT NULL, `intercept` REAL NOT NULL, `sample` INTEGER NOT NULL, `brierBefore` REAL NOT NULL, `brierAfter` REAL NOT NULL, `generation` INTEGER NOT NULL, `updatedUtc` INTEGER NOT NULL, PRIMARY KEY(`track`))",
+        "fields": [
+          {
+            "fieldPath": "track",
+            "columnName": "track",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slope",
+            "columnName": "slope",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intercept",
+            "columnName": "intercept",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sample",
+            "columnName": "sample",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "brierBefore",
+            "columnName": "brierBefore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "brierAfter",
+            "columnName": "brierAfter",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generation",
+            "columnName": "generation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "track"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "fantasy_leagues",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sport` TEXT NOT NULL, `platform` TEXT NOT NULL, `name` TEXT NOT NULL, `scoring` TEXT NOT NULL, `myTeam` TEXT NOT NULL, `week` INTEGER NOT NULL, `importedUtc` INTEGER NOT NULL, `updatedUtc` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sport",
+            "columnName": "sport",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "platform",
+            "columnName": "platform",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scoring",
+            "columnName": "scoring",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "myTeam",
+            "columnName": "myTeam",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "week",
+            "columnName": "week",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importedUtc",
+            "columnName": "importedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fantasy_leagues_sport",
+            "unique": false,
+            "columnNames": [
+              "sport"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_leagues_sport` ON `${TABLE_NAME}` (`sport`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "fantasy_teams",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`leagueId` TEXT NOT NULL, `name` TEXT NOT NULL, `owner` TEXT NOT NULL, `rank` INTEGER NOT NULL, `wins` INTEGER NOT NULL, `losses` INTEGER NOT NULL, `ties` INTEGER NOT NULL, `pointsFor` REAL, `pointsAgainst` REAL, `isMine` INTEGER NOT NULL, `updatedUtc` INTEGER NOT NULL, PRIMARY KEY(`leagueId`, `name`))",
+        "fields": [
+          {
+            "fieldPath": "leagueId",
+            "columnName": "leagueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "owner",
+            "columnName": "owner",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rank",
+            "columnName": "rank",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wins",
+            "columnName": "wins",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "losses",
+            "columnName": "losses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ties",
+            "columnName": "ties",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pointsFor",
+            "columnName": "pointsFor",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pointsAgainst",
+            "columnName": "pointsAgainst",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isMine",
+            "columnName": "isMine",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "leagueId",
+            "name"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fantasy_teams_leagueId",
+            "unique": false,
+            "columnNames": [
+              "leagueId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_teams_leagueId` ON `${TABLE_NAME}` (`leagueId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "fantasy_roster",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `leagueId` TEXT NOT NULL, `week` INTEGER NOT NULL, `teamName` TEXT NOT NULL, `playerKey` TEXT NOT NULL, `playerName` TEXT NOT NULL, `slot` TEXT NOT NULL, `position` TEXT NOT NULL, `proTeam` TEXT NOT NULL, `opponent` TEXT NOT NULL, `projected` REAL, `seasonPoints` REAL, `athleteId` TEXT NOT NULL, `headshotUrl` TEXT NOT NULL, `teamLogoUrl` TEXT NOT NULL, `source` TEXT NOT NULL, `updatedUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leagueId",
+            "columnName": "leagueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "week",
+            "columnName": "week",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teamName",
+            "columnName": "teamName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerKey",
+            "columnName": "playerKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "playerName",
+            "columnName": "playerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slot",
+            "columnName": "slot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proTeam",
+            "columnName": "proTeam",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opponent",
+            "columnName": "opponent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "projected",
+            "columnName": "projected",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "seasonPoints",
+            "columnName": "seasonPoints",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "athleteId",
+            "columnName": "athleteId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "headshotUrl",
+            "columnName": "headshotUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "teamLogoUrl",
+            "columnName": "teamLogoUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fantasy_roster_leagueId",
+            "unique": false,
+            "columnNames": [
+              "leagueId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_roster_leagueId` ON `${TABLE_NAME}` (`leagueId`)"
+          },
+          {
+            "name": "index_fantasy_roster_leagueId_week",
+            "unique": false,
+            "columnNames": [
+              "leagueId",
+              "week"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_roster_leagueId_week` ON `${TABLE_NAME}` (`leagueId`, `week`)"
+          },
+          {
+            "name": "index_fantasy_roster_playerKey",
+            "unique": false,
+            "columnNames": [
+              "playerKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_roster_playerKey` ON `${TABLE_NAME}` (`playerKey`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "fantasy_weeks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `leagueId` TEXT NOT NULL, `week` INTEGER NOT NULL, `myTeam` TEXT NOT NULL, `opponent` TEXT NOT NULL, `myProjected` REAL, `oppProjected` REAL, `myScore` REAL, `oppScore` REAL, `note` TEXT NOT NULL, `updatedUtc` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "leagueId",
+            "columnName": "leagueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "week",
+            "columnName": "week",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "myTeam",
+            "columnName": "myTeam",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opponent",
+            "columnName": "opponent",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "myProjected",
+            "columnName": "myProjected",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "oppProjected",
+            "columnName": "oppProjected",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "myScore",
+            "columnName": "myScore",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "oppScore",
+            "columnName": "oppScore",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "note",
+            "columnName": "note",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedUtc",
+            "columnName": "updatedUtc",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_fantasy_weeks_leagueId",
+            "unique": false,
+            "columnNames": [
+              "leagueId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_fantasy_weeks_leagueId` ON `${TABLE_NAME}` (`leagueId`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bebdf2fbfa5b5cf28f3e663d94b30163')"
+    ]
+  }
+}

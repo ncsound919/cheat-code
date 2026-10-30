@@ -280,6 +280,9 @@ private class ConfirmTicket(
             PlaceOutcome.UNAVAILABLE -> ToolResult.Rejected(
                 "the prop behind ${id} is no longer available, so the ticket was not recorded",
             )
+            PlaceOutcome.INSUFFICIENT_BANKROLL -> ToolResult.Rejected(
+                "the practice bankroll is too low for this ticket; record a result or reset the practice account first",
+            )
         }
     }
 }

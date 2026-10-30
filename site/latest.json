@@ -1,10 +1,10 @@
 {
-  "version": "1.1.1",
-  "name": "Cheat Code 1.1.1",
+  "version": "1.1.2",
+  "name": "Cheat Code 1.1.2",
   "published": "2026-10-30",
   "apk": "cheat-code.apk",
   "page": "https://propslab.vercel.app/download.html",
-  "size": 27563940,
-  "sha256": "171bfd2f404fdb0ecde961f71986144818a0c41342d96fe8c288977dfb2969cd",
-  "notes": "Signed release, arm64 only, Android 10 or newer. Editable bet slips: swap a leg and move any player line either way, and the chance, price and shared image follow. Fantasy desk included. Paper bets only; no account required."
+  "size": 27613468,
+  "sha256": "bd686d80e548838bf27bc30eb1cc4491e20d5e7b893104406da0c1cb1a915c02",
+  "notes": "Signed release, arm64 only, Android 10 or newer. Adds the practice ledger: a 250-unit fake bankroll, tagged paper bets, win rate and formula filters, and toggleable bankroll, formula and self-learning charts. Paper bets only; no account required."
 }

@@ -416,12 +416,25 @@ class PropsRepository(
         return AgentContext(brief = brief, defaults = defaults)
     }
 
-    override suspend fun placePaperBet(predictionId: String, side: Side, stakeUnits: Double): PlaceOutcome =
-        when (placeBet(predictionId, side, stakeUnits)) {
+    override suspend fun placePaperBet(predictionId: String, side: Side, stakeUnits: Double): PlaceOutcome {
+        // An agent ticket is the live book's idea, so tag it with the formula that holds the
+        // book. A manual bet from the Bets screen can choose its own tag instead.
+        val state = db.sandboxDao().state(SandboxStateEntity.AUTOPILOT_ID)
+        return when (
+            placeBet(
+                predictionId = predictionId,
+                side = side,
+                stake = stakeUnits,
+                formulaId = state?.promotedId.orEmpty(),
+                formulaLabel = state?.promotedLabel.orEmpty(),
+            )
+        ) {
             PlaceResult.Placed -> PlaceOutcome.PLACED
             PlaceResult.Duplicate -> PlaceOutcome.DUPLICATE
             PlaceResult.Unavailable -> PlaceOutcome.UNAVAILABLE
+            is PlaceResult.NotEnoughBankroll -> PlaceOutcome.INSUFFICIENT_BANKROLL
         }
+    }
 
     fun prop(id: String): Flow<PropUi?> = combine(
         db.slateDao().observeRow(id),
@@ -1064,22 +1077,48 @@ class PropsRepository(
         )
     }
 
-    suspend fun placeBet(predictionId: String, side: Side, stake: Double): PlaceResult =
-        db.withTransaction<PlaceResult> {
-            val ui = db.slateDao().row(predictionId)?.toUi()
-            val line = ui?.line
-            val odds = if (side == Side.OVER) ui?.overOdds else ui?.underOdds
-            if (ui == null || !ui.available || line == null || odds == null) return@withTransaction PlaceResult.Unavailable
-            val now = clock()
-            val id = "bet-$predictionId-${side.name.lowercase()}"
-            val inserted = db.paperDao().insertBet(PaperBetEntity(id, predictionId, side.name, odds, line, stake, now))
-            if (inserted == -1L) return@withTransaction PlaceResult.Duplicate
-            audit(
-                "paper_bet_placed", id,
-                "${ui.playerName} ${side.label} $line at ${fmtOddsPlain(odds)}, ${num1(stake)} units, model ${ui.modelVersion}",
-            )
-            PlaceResult.Placed
-        }
+    suspend fun placeBet(
+        predictionId: String,
+        side: Side,
+        stake: Double,
+        formulaId: String = "",
+        formulaLabel: String = "",
+    ): PlaceResult = db.withTransaction<PlaceResult> {
+        val ui = db.slateDao().row(predictionId)?.toUi()
+        val line = ui?.line
+        val odds = if (side == Side.OVER) ui?.overOdds else ui?.underOdds
+        if (ui == null || !ui.available || line == null || odds == null) return@withTransaction PlaceResult.Unavailable
+        if (!stake.isFinite() || stake <= 0.0) return@withTransaction PlaceResult.Unavailable
+        val available = PracticeLedger.available(
+            settledProfit = db.paperDao().settledProfit(),
+            openStakes = db.paperDao().openStakes(),
+        )
+        if (stake > available + 1e-6) return@withTransaction PlaceResult.NotEnoughBankroll(available)
+        val now = clock()
+        val id = "bet-$predictionId-${side.name.lowercase()}"
+        val tagId = formulaId.trim().take(80)
+        val tagLabel = formulaLabel.trim().take(80)
+        val inserted = db.paperDao().insertBet(
+            PaperBetEntity(id, predictionId, side.name, odds, line, stake, now, tagId, tagLabel),
+        )
+        if (inserted == -1L) return@withTransaction PlaceResult.Duplicate
+        audit(
+            "paper_bet_placed", id,
+            "${ui.playerName} ${side.label} $line at ${fmtOddsPlain(odds)}, ${num1(stake)} units, " +
+                "${tagLabel.ifBlank { PracticeLedger.MANUAL_LABEL }}, model ${ui.modelVersion}",
+        )
+        PlaceResult.Placed
+    }
+
+    /** Clears only the user's practice ledger; the formula sandbox keeps its own record. */
+    suspend fun resetPracticeAccount() = db.withTransaction {
+        db.paperDao().clearSettlements()
+        db.paperDao().clearBets()
+        audit(
+            "practice_reset", "paper",
+            "Practice ledger cleared; bankroll reset to ${num1(PracticeLedger.STARTING_BANKROLL)} units",
+        )
+    }
 
     suspend fun settleBet(betId: String, actual: Double): Boolean = db.withTransaction<Boolean> {
         val bet = db.paperDao().bet(betId) ?: return@withTransaction false
@@ -2210,5 +2249,5 @@ private fun BetRow.toUi() = BetUi(
     id = betId, playerName = playerName, teamCode = teamCode, side = Side.valueOf(side), line = line,
     odds = quotedOdds, stake = stakeUnits, decidedUtc = decidedUtc, actual = actual,
     outcome = outcome?.let { Outcome.valueOf(it) }, profit = profitUnits, settledUtc = settledUtc,
-    market = market, book = book,
+    market = market, book = book, formulaId = formulaId, formulaLabel = formulaLabel,
 )

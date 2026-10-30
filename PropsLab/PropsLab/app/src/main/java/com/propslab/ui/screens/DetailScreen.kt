@@ -69,10 +69,12 @@ class DetailViewModel(private val repo: PropsRepository, private val id: String)
     fun place(side: Side, stake: Double) {
         viewModelScope.launch {
             _messages.emit(
-                when (repo.placeBet(id, side, stake)) {
-                    PlaceResult.Placed -> "Paper bet recorded. It is in your audit history."
+                when (val result = repo.placeBet(id, side, stake)) {
+                    PlaceResult.Placed -> "Paper bet recorded. It is in your Bets tab."
                     PlaceResult.Duplicate -> "You already have a paper bet on the ${side.label} for this prop."
                     PlaceResult.Unavailable -> "This estimate is unavailable, so no bet was recorded."
+                    is PlaceResult.NotEnoughBankroll ->
+                        "Only ${"%.2f".format(result.available)} practice units are available, so no bet was recorded."
                 },
             )
         }

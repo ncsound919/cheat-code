@@ -63,6 +63,8 @@ data class BetRow(
     val outcome: String?,
     val profitUnits: Double?,
     val settledUtc: Long?,
+    val formulaId: String,
+    val formulaLabel: String,
 )
 
 private const val SLATE_SELECT = """
@@ -129,7 +131,8 @@ interface PaperDao {
             "COALESCE(pl.name, 'Removed prop') AS playerName, COALESCE(pl.teamCode, '') AS teamCode, " +
             "b.side AS side, b.line AS line, b.quotedOdds AS quotedOdds, b.stakeUnits AS stakeUnits, b.decidedUtc AS decidedUtc, " +
             "COALESCE(p.market, '') AS market, COALESCE(o.book, '') AS book, " +
-            "s.actual AS actual, s.outcome AS outcome, s.profitUnits AS profitUnits, s.settledUtc AS settledUtc " +
+            "s.actual AS actual, s.outcome AS outcome, s.profitUnits AS profitUnits, s.settledUtc AS settledUtc, " +
+            "b.formulaId AS formulaId, b.formulaLabel AS formulaLabel " +
             "FROM paper_bets b LEFT JOIN predictions p ON p.id = b.predictionId " +
             "LEFT JOIN players pl ON pl.id = p.playerId " +
             "LEFT JOIN odds_snapshots o ON o.id = p.quoteId " +
@@ -139,6 +142,21 @@ interface PaperDao {
 
     @Query("SELECT * FROM paper_bets WHERE id = :id")
     suspend fun bet(id: String): PaperBetEntity?
+
+    /** Stake already committed to bets whose result is not recorded yet. */
+    @Query(
+        "SELECT IFNULL(SUM(b.stakeUnits), 0) FROM paper_bets b " +
+            "LEFT JOIN settlements s ON s.betId = b.id WHERE s.betId IS NULL"
+    )
+    suspend fun openStakes(): Double
+
+    /** Money won or lost across every settled practice bet. */
+    @Query("SELECT IFNULL(SUM(profitUnits), 0) FROM settlements")
+    suspend fun settledProfit(): Double
+
+    @Query("DELETE FROM settlements") suspend fun clearSettlements()
+
+    @Query("DELETE FROM paper_bets") suspend fun clearBets()
 
     /** Returns -1 when a bet for the same prediction and side already exists. */
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertBet(bet: PaperBetEntity): Long

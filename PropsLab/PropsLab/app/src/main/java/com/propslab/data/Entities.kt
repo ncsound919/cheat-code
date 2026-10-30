@@ -77,6 +77,9 @@ data class PaperBetEntity(
     val line: Double,
     val stakeUnits: Double,
     val decidedUtc: Long,
+    /** The formula this practice bet is tagged to; empty means the user's own pick. */
+    @ColumnInfo(defaultValue = "") val formulaId: String = "",
+    @ColumnInfo(defaultValue = "") val formulaLabel: String = "",
 )
 
 @Entity(tableName = "settlements")

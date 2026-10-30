@@ -56,8 +56,17 @@ data class BetUi(
     val settledUtc: Long?,
     val market: String = "player_points",
     val book: String = "",
+    /** The formula this bet was tagged to; empty means the user's own pick. */
+    val formulaId: String = "",
+    val formulaLabel: String = "",
 ) {
     val isOpen: Boolean get() = outcome == null
+
+    /** Stable key used by the history filter and the formula chart. */
+    val formulaKey: String get() = formulaId.ifBlank { PracticeLedger.MANUAL_FORMULA_ID }
+
+    /** What the ledger prints for a bet with no formula tag. */
+    val formulaName: String get() = formulaLabel.ifBlank { "My pick" }
 
     /** The market in the words a book uses: "Points", "Rebounds", and so on. */
     val marketLabel: String get() = Markets.label(market)
@@ -76,4 +85,5 @@ sealed interface PlaceResult {
     data object Placed : PlaceResult
     data object Duplicate : PlaceResult
     data object Unavailable : PlaceResult
+    data class NotEnoughBankroll(val available: Double) : PlaceResult
 }
