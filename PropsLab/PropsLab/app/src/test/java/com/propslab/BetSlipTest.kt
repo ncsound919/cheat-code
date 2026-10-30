@@ -4,6 +4,8 @@ import com.propslab.data.ParlayCandidate
 import com.propslab.data.ParlayKind
 import com.propslab.data.ParlayLegUi
 import com.propslab.data.ParlayTicketUi
+import com.propslab.data.ParlayTickets
+import com.propslab.domain.Odds
 import com.propslab.domain.Side
 import com.propslab.fantasy.FantasySport
 import com.propslab.fantasy.ProTeams
@@ -23,6 +25,7 @@ class BetSlipTest {
         label: String,
         odds: Int,
         chance: Double,
+        line: Double = 24.5,
     ) = ParlayCandidate(
         key = "p:$name",
         gameId = "g-$team",
@@ -33,7 +36,7 @@ class BetSlipTest {
         pWin = chance,
         pPush = 0.0,
         edgePts = 2.0,
-        line = 24.5,
+        line = line,
         side = Side.OVER,
         overProb = chance,
         teamCode = team,
@@ -57,9 +60,9 @@ class BetSlipTest {
     }
 
     private fun sample() = ticket(
-        candidate("LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56) to 0.56,
-        candidate("Jayson Tatum", "BOS", "Jayson Tatum Over 28.5 Points", -105, 0.52) to 0.52,
-        candidate("Nikola Jokic", "DEN", "Nikola Jokic Over 9.5 Assists", 110, 0.48) to 0.48,
+        candidate("LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56, 24.5) to 0.56,
+        candidate("Jayson Tatum", "BOS", "Jayson Tatum Over 28.5 Points", -105, 0.52, 28.5) to 0.52,
+        candidate("Nikola Jokic", "DEN", "Nikola Jokic Over 9.5 Assists", 110, 0.48, 9.5) to 0.48,
     )
 
     @Test
@@ -69,11 +72,60 @@ class BetSlipTest {
 
         assertEquals(3, slip.legs.size)
         assertEquals("3-leg parlay", slip.label)
-        assertTrue(text.contains("LeBron James Over 24.5 Points (-115)"))
-        assertTrue(text.contains("Jayson Tatum Over 28.5 Points (-105)"))
-        assertTrue(text.contains("Nikola Jokic Over 9.5 Assists (+110)"))
+        assertEquals("LeBron James Over 24.5 Points", slip.legs[0].pick)
+        assertEquals("Jayson Tatum Over 28.5 Points", slip.legs[1].pick)
+        assertEquals("Nikola Jokic Over 9.5 Assists", slip.legs[2].pick)
+        assertTrue(text, text.contains("LeBron James Over 24.5 Points (-115)"))
+        assertTrue(text, text.contains("Jayson Tatum Over 28.5 Points (-105)"))
+        assertTrue(text, text.contains("Nikola Jokic Over 9.5 Assists (+110)"))
         assertTrue(text.contains("Stake 2.00 u"))
         assertTrue(text.contains("not a placed bet", ignoreCase = true))
+    }
+
+    @Test
+    fun `moving one leg's line changes its price and chance`() {
+        val candidate = candidate(
+            "LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56, 24.5,
+        ).copy(mean = 24.5, spread = 6.0)
+
+        val quoted = ParlayTickets.reprice(candidate, 0.0, circadian = false)
+        val moved = ParlayTickets.reprice(candidate, 2.0, circadian = false)
+
+        assertEquals(24.5, quoted.line!!, 1e-9)
+        assertEquals(26.5, moved.line!!, 1e-9)
+        assertEquals(2.0, moved.shiftPts, 1e-9)
+        assertTrue(
+            "a longer line must pay a longer price",
+            Odds.americanToDecimal(moved.odds) > Odds.americanToDecimal(quoted.odds),
+        )
+        assertTrue(
+            "a longer line must be less likely",
+            moved.winChance < quoted.winChance,
+        )
+    }
+
+    @Test
+    fun `an edited leg writes the moved line into the tracker text`() {
+        val candidate = candidate(
+            "LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56, 24.5,
+        )
+        val edited = ParlayLegUi(
+            candidate = candidate,
+            winChance = 0.51,
+            odds = 105,
+            line = 26.5,
+        )
+        val slip = BetSlipBuilder.from(
+            label = "3-leg parlay",
+            legs = listOf(edited),
+            decimal = 4.2,
+            probability = 0.30,
+            book = SlipBook.DRAFTKINGS,
+            stake = 1.0,
+        )
+        assertEquals("LeBron James Over 26.5 Points", slip.legs.single().pick)
+        assertTrue(slip.plainText().contains("LeBron James Over 26.5 Points (+105)"))
+        assertEquals(0.51, slip.legs.single().modelChance, 1e-9)
     }
 
     @Test

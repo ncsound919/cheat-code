@@ -1,6 +1,7 @@
 package com.propslab.slip
 
 import com.propslab.data.ParlayKind
+import com.propslab.data.ParlayLegUi
 import com.propslab.data.ParlayTicketUi
 import com.propslab.domain.Side
 import com.propslab.fantasy.FantasySport
@@ -129,14 +130,37 @@ object BetSlipBuilder {
         book: SlipBook = SlipBook.DRAFTKINGS,
         stake: Double = 0.0,
         sport: FantasySport = FantasySport.BASKETBALL,
+    ): BetSlip = from(
+        label = labelFor(ticket),
+        legs = ticket.legs,
+        decimal = ticket.decimal,
+        probability = ticket.probability,
+        book = book,
+        stake = stake,
+        sport = sport,
+    )
+
+    /**
+     * A slip from legs the user has edited. The chance and price are recomputed by the
+     * caller, so a swapped leg or a moved line is the number that actually goes out.
+     */
+    fun from(
+        label: String,
+        legs: List<ParlayLegUi>,
+        decimal: Double,
+        probability: Double,
+        book: SlipBook = SlipBook.DRAFTKINGS,
+        stake: Double = 0.0,
+        sport: FantasySport = FantasySport.BASKETBALL,
     ): BetSlip {
-        val legs = ticket.legs.map { leg ->
+        val slipLegs = legs.map { leg ->
             val candidate = leg.candidate
             val teamCode = candidate.teamCode ?: candidate.venueCode.orEmpty()
+            val pick = pickLabel(leg)
             SlipLeg(
                 player = candidate.subject ?: candidate.detail.substringBefore(" · ").ifBlank { candidate.label },
-                pick = candidate.label,
-                market = candidate.label.substringAfterLast(' '),
+                pick = pick,
+                market = pick.substringAfterLast(' '),
                 side = candidate.side,
                 line = leg.line,
                 odds = leg.odds,
@@ -145,18 +169,29 @@ object BetSlipBuilder {
                 teamLogoUrl = ProTeams.logoUrl(teamCode, sport),
             )
         }
-        val label = if (ticket.kind == ParlayKind.SAME_GAME) {
-            "same-game parlay"
-        } else {
-            "${ticket.size}-leg parlay"
-        }
         return BetSlip(
             label = label,
             book = book,
-            legs = legs,
-            decimal = ticket.decimal.coerceAtLeast(1.0),
-            probability = ticket.probability,
+            legs = slipLegs,
+            decimal = decimal.coerceAtLeast(1.0),
+            probability = probability,
             stake = stake.coerceAtLeast(0.0),
         )
     }
+
+    fun labelFor(ticket: ParlayTicketUi): String =
+        if (ticket.kind == ParlayKind.SAME_GAME) "same-game parlay" else "${ticket.size}-leg parlay"
+
+    /** Rebuilds the pick from the moved line rather than leaving the quoted line in the text. */
+    fun pickLabel(leg: ParlayLegUi): String {
+        val candidate = leg.candidate
+        val subject = candidate.subject ?: return candidate.label
+        val line = leg.line ?: return candidate.label
+        val after = candidate.label.substringAfter("$subject ${candidate.side.label} ", "")
+        val market = after.substringAfter(' ', "").ifBlank { candidate.label.substringAfterLast(' ') }
+        return "$subject ${candidate.side.label} ${lineText(line)} $market".trim()
+    }
+
+    private fun lineText(value: Double): String =
+        if (value % 1.0 == 0.0) "%.0f".format(value) else "%.1f".format(value)
 }

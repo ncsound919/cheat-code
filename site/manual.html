@@ -61,7 +61,7 @@
     <circle cx="336" cy="206" r="13" fill="#6fd3a0"/>
   </svg>
   <span class="name">Cheat Code</span>
-  <span class="tag">Offline manual · v1.1</span>
+  <span class="tag">Offline manual · v1.1.1</span>
 </header>
 
 <h1>Everything, without the app explaining itself.</h1>
@@ -262,9 +262,10 @@
 
 <h2 id="slip">19. Bet slips and handoff</h2>
 <p>Every parlay card has <strong>Make bet slip</strong>. The slip uses that card's own legs, so the top-ranked players and their club marks are already there. Add a practice stake and choose the book the slip is addressed to; the chance, decimal price, potential return and profit update from the same numbers on the card.</p>
+<p><strong>SWAP</strong> replaces a leg with another priced candidate from today's board. A same-game slip only offers players from that game, and no slip takes two markets on one player. Each player leg also has its own line slider: moving it up to four points reprices that leg from the player's distribution, so the price lengthens and the model chance falls. The ticket's chance, price, stake, return and shared image all update from the edited legs, and <strong>Reset</strong> returns to the card.</p>
 <p><strong>Share slip</strong> draws a 1080-pixel ticket and opens Android's share sheet. Gambly documents receiving a screenshot this way; its image-to-betslip flow reads the ticket and gives you a slip to review. <strong>Copy for QuickPickBot</strong> puts the same picks in tracker-readable lines, which you paste into Pikkit's QuickPickBot web tool. <strong>Send to Gambly</strong> targets that app when it is installed and falls back to the chooser when it is not.</p>
 <p><strong>Open DraftKings</strong> (or FanDuel, BetMGM, Caesars) opens the book's own site. It does not fill the book's slip: none of these books publishes a public prefill API for another app. That last step is yours, and the sheet says so before you tap it.</p>
-<p>Club marks for all 30 NBA and 32 NFL clubs ship with the build, so no logo lookup or import is needed for a team. A player without a known headshot keeps his initials and his club mark rather than borrowing someone else's photo. The slip is analysis, not a placed wager; prices move, and every leg should be checked in the book.</p>
+<p>Club marks for all 30 NBA and 32 NFL clubs ship with the build, so no logo lookup or import is needed for a team. A player without a known headshot keeps his initials and his club mark rather than borrowing someone else's photo. A moved line is the app's own repricing, not a price a book quoted; the book's number may differ. The slip is analysis, not a placed wager; prices move, and every leg should be checked in the book.</p>
 
 <footer>
   Cheat Code is not affiliated with the NBA or any sportsbook. Fonts: Bricolage Grotesque and Manrope, SIL OFL. Math X prompt text: MIT. <br>

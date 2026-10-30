@@ -307,6 +307,7 @@ class ParlayLabTest {
         val ui = ParlayLab.compose(board, ParlayControls(budget = "100", circadian = false), sizes = listOf(3))
         assertEquals(1, ui.tickets.size)
         val ticket = ui.tickets.single()
+        assertEquals(3, ui.candidates.size)
         assertTrue(ui.staked > 0.0)
         assertTrue(ui.staked <= ui.budget + 1e-9)
         assertEquals(ui.budget - ui.staked, ui.unallocated, 1e-9)

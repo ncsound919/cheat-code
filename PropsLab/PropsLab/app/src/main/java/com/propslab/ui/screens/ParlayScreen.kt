@@ -155,7 +155,12 @@ fun ParlayScreen(onBack: () -> Unit, onOpenPlain: () -> Unit, onOpenPremium: () 
             item { ParlayFooter(state) }
         }
         slipTicket?.let { ticket ->
-            BetSlipSheet(ticket = ticket, onDismiss = { slipTicket = null })
+            BetSlipSheet(
+                ticket = ticket,
+                candidates = state.candidates,
+                circadian = state.circadian,
+                onDismiss = { slipTicket = null },
+            )
         }
     }
 }

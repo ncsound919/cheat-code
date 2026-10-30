@@ -93,7 +93,7 @@ object BetSlipImage {
             )
             text(
                 canvas,
-                fit(leg.pick, body, 23f, 570f),
+                fit(leg.pick.removePrefix(leg.player).trim().ifBlank { leg.pick }, body, 23f, 570f),
                 PAD + 112f, center + 27f, 23f, DUST, body,
             )
             text(canvas, price(leg.odds), WIDTH - PAD - 20f, center - 2f, 30f, AQUA, display,

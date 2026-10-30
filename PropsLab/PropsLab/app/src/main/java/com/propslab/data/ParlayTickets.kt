@@ -165,6 +165,8 @@ data class ParlayUi(
      * than silently disappearing from the picker.
      */
     val eligible: Map<String, Set<String>> = emptyMap(),
+    /** The priced candidates behind the cards, used by the slip's leg swap. */
+    val candidates: List<ParlayCandidate> = emptyList(),
 )
 
 /**
@@ -398,6 +400,16 @@ object ParlayTickets {
             correlationShrink = adjusted.shrink,
         )
     }
+
+    /**
+     * Reprices one leg for a custom line move. Exposed so the slip can move a single leg
+     * without changing the ticket the parlay screen generated.
+     */
+    fun reprice(
+        candidate: ParlayCandidate,
+        points: Double,
+        circadian: Boolean = true,
+    ): ParlayLegUi = priceLeg(candidate, ParlayOptions(pushPoints = points, circadian = circadian))
 
     /** Reprices one leg for the current push and circadian settings. */
     private fun priceLeg(candidate: ParlayCandidate, options: ParlayOptions): ParlayLegUi {
@@ -692,6 +704,7 @@ object ParlayLab {
             circadian = controls.circadian,
             warnings = warnings,
             eligible = eligible,
+            candidates = candidatesByStrategy.values.flatten().distinctBy { it.key },
         )
     }
 
