@@ -55,6 +55,7 @@
       <a href="#loop">The loop</a>
       <a href="#inside">Inside the app</a>
       <a href="#screens">Screens</a>
+      <a href="#fantasy">Fantasy</a>
       <a href="#pricing">Pricing</a>
       <a href="manual.html">Manual</a>
       <a class="nav-download" href="download.html">Get the app
@@ -288,6 +289,48 @@
           <div class="device-note"><span class="led"></span>No telemetry · no account · no cloud required</div>
         </article>
 
+        <article class="feature wide" id="fantasy" data-reveal>
+          <div class="feature-copy">
+            <div class="feature-kicker"><span class="dot aqua"></span>Fantasy desk</div>
+            <h3>Photograph the lineup. Get the call.</h3>
+            <p>Capture your lineup, your opponent's and the league table. On-device text recognition reads the slots, names, pro teams and projections; every player gets a short start/sit call and the reason behind it.</p>
+            <div class="market-row">
+              <span class="market-pill">On-device OCR</span>
+              <span class="market-pill">Weekly write-ups</span>
+              <span class="market-pill">Season track</span>
+              <span class="market-pill">Photos + club logos</span>
+            </div>
+            <a class="text-link" href="manual.html#fantasy">How capture works
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <div class="feature-art" aria-hidden="true">
+            <div class="board-line">
+              <div class="board-game">MY TEAM <span>·</span> WEEK 9</div>
+              <div class="board-market"><b>START · 42.5 proj</b><span class="gain">Trending up</span><em>PG</em></div>
+              <div class="split-bar compact"><i class="aqua-bar" style="width:64%"></i><i class="amber-bar" style="width:36%"></i></div>
+            </div>
+            <div class="board-line dim">
+              <div class="board-game">OPPONENT <span>·</span> 38.1 proj</div>
+              <div class="board-market"><b>WATCH · check the news</b><span class="gain">Questionable</span><em>G</em></div>
+            </div>
+            <p class="table-note">Illustrative calls, not picks. Photos are looked up by player name; the screenshot stays on the phone.</p>
+          </div>
+        </article>
+
+        <article class="feature amber-feature" id="slip" data-reveal>
+          <div class="feature-kicker"><span class="dot amber"></span>Bet slip</div>
+          <h3>Built here. Confirmed in your book.</h3>
+          <p>Each parlay becomes a numbered slip with the board's players and club marks already attached. Share the image to Gambly, or paste the text into Pikkit's QuickPickBot. No book accepts a prefill from another app, so the last tap stays yours.</p>
+          <div class="mini-table">
+            <div class="table-cap"><span>3-LEG PARLAY</span><b>6.42x</b></div>
+            <div><span>LeBron James · Over 24.5</span><b>−115</b></div>
+            <div><span>Jayson Tatum · Over 28.5</span><b>−105</b></div>
+            <div><span>Nikola Jokic · Over 9.5 ast</span><b>+110</b></div>
+          </div>
+          <p class="table-note">Illustrative slip. Prices move; check every leg in the book.</p>
+        </article>
+
         <article class="feature share-feature" data-reveal>
           <div class="feature-copy">
           <div class="feature-kicker"><span class="dot amber"></span>Share cards</div>
@@ -349,7 +392,7 @@
           <p class="plan-note">For the extra surfaces and capacity — never a better guess.</p>
           <ul>
             <li>10-leg parlay tickets</li>
-            <li>Fantasy desk and the sports wire</li>
+            <li>Fantasy desk with lineup capture, weekly write-ups and the sports wire</li>
             <li>Watermark-free share cards</li>
             <li>Cloud model fallback for smaller phones</li>
             <li>Everything in Free, always</li>
@@ -372,11 +415,11 @@
       <div class="faq" data-reveal>
         <details>
           <summary>Does it place bets?</summary>
-          <p>No. Cheat Code is paper trading and analysis. It cannot place a wager, hold funds, or connect to a sportsbook account, and no sportsbook publishes a public wagering API.</p>
+          <p>No. Cheat Code is paper trading and analysis. The parlay cards can build a shareable bet slip for a tracker such as Gambly or Pikkit, but the app cannot fill or place a wager, hold funds, or connect to a sportsbook account — and no sportsbook publishes a public prefill for another app.</p>
         </details>
         <details>
           <summary>Where does the data come from?</summary>
-          <p>Two read-only providers you configure: one for prop prices, one for box scores. A sync writes the board and settles finished games. Nothing is uploaded.</p>
+          <p>Two read-only providers you configure: one for prop prices, one for box scores. A sync writes the board and settles finished games. Screenshots are read on the phone and never uploaded. After a fantasy capture, only player names are sent to ESPN's public directory for headshots and club logos.</p>
         </details>
         <details>
           <summary>What do I need before I start?</summary>
@@ -392,7 +435,7 @@
         </details>
         <details>
           <summary>What does Premium add?</summary>
-          <p>Ten-leg parlays, the fantasy desk, the sports wire, watermark-free share cards and a cloud-model fallback. It does not unlock a stronger formula, a better line or a different gate.</p>
+          <p>Ten-leg parlays, the fantasy desk with lineup capture and weekly write-ups, the sports wire, watermark-free share cards and a cloud-model fallback. It does not unlock a stronger formula, a better line or a different gate.</p>
         </details>
         <details>
           <summary>Can I run my own model?</summary>
@@ -445,7 +488,7 @@
     </div>
   </div>
   <div class="wrap foot-bottom">
-    <span>© 2026 Cheat Code · build 1.0.0</span>
+    <span>© 2026 Cheat Code · build 1.1.0</span>
     <span>Built for the board, not the hype.</span>
   </div>
 </footer>

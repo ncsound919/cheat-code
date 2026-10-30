@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
@@ -34,6 +35,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.propslab.fantasy.FantasySport
+import com.propslab.fantasy.ProTeams
 import com.propslab.ui.initials
 import com.propslab.ui.theme.Palette
 import kotlin.math.abs
@@ -117,6 +120,35 @@ fun SplitBar(over: Float, push: Float, market: Float?, modifier: Modifier = Modi
             drawLine(Palette.Chalk, Offset(x, y - 3.dp.toPx()), Offset(x, y + h + 3.dp.toPx()), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
         }
     }
+}
+
+/**
+ * The club's own mark, from the directory bundled with the build. A code that is not a
+ * known club falls back to the initials tile, so a row never shows a broken image.
+ */
+@Composable
+fun TeamMark(
+    teamCode: String,
+    sport: FantasySport = FantasySport.BASKETBALL,
+    size: Dp = 30.dp,
+) {
+    val code = ProTeams.code(teamCode, sport) ?: teamCode.trim().uppercase()
+    val url = ProTeams.logoUrl(code, sport)
+    if (url.isBlank()) {
+        TeamAvatar(code.ifBlank { "?" }, code, size)
+        return
+    }
+    val shape = CircleShape
+    RemoteImage(
+        url = url,
+        contentDescription = "$code club mark",
+        modifier = Modifier.size(size).clip(shape).background(Palette.Raised)
+            .border(1.dp, Palette.Hairline, shape),
+        contentScale = ContentScale.Fit,
+        fallback = {
+            Text(code.take(3), style = MaterialTheme.typography.labelSmall, color = Palette.Dust)
+        },
+    )
 }
 
 @Composable

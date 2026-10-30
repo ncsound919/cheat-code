@@ -42,7 +42,7 @@ import com.propslab.ui.components.BookMark
 import com.propslab.ui.components.Panel
 import com.propslab.ui.components.PlainLink
 import com.propslab.ui.components.SplitBar
-import com.propslab.ui.components.TeamAvatar
+import com.propslab.ui.components.TeamMark
 import com.propslab.ui.components.WorkToggle
 import com.propslab.ui.components.bookLabel
 import com.propslab.ui.fmtDay
@@ -259,7 +259,7 @@ private fun BestRow(pick: BestPickUi, easy: Boolean, onClick: () -> Unit) {
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TeamAvatar(p.playerName, p.teamCode, 42.dp)
+            TeamMark(p.teamCode, size = 42.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(

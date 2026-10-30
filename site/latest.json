@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
-  "name": "Cheat Code 1.0.0",
+  "version": "1.1.0",
+  "name": "Cheat Code 1.1.0",
   "published": "2026-10-30",
   "apk": "cheat-code.apk",
   "page": "https://propslab.vercel.app/download.html",
-  "size": 27337232,
-  "sha256": "566e118ee64bf0cf3367c3483fff794ea61a68f474ca05da961d8822c55dfcca",
-  "notes": "Signed release, arm64 only, Android 10 or newer. Paper bets only; no account required. This build points at the live propslab.vercel.app site and update feed."
+  "size": 27547324,
+  "sha256": "4667b69b150b2a75f36859e115ae1f281d4300d32d9b4b1b06036f9c080240e5",
+  "notes": "Signed release, arm64 only, Android 10 or newer. Adds the fantasy desk and bet-slip handoff to Gambly and Pikkit; paper bets only; no account required."
 }

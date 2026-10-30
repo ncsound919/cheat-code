@@ -33,6 +33,13 @@ import com.propslab.domain.Staking
 import com.propslab.feed.FeedSync
 import com.propslab.feed.GameMarkets
 import com.propslab.feed.Names
+import com.propslab.fantasy.CaptureKind
+import com.propslab.fantasy.FantasyAssetReport
+import com.propslab.fantasy.FantasyAssets
+import com.propslab.fantasy.FantasyCaptureSave
+import com.propslab.fantasy.FantasySaveResult
+import com.propslab.fantasy.FantasySlots
+import com.propslab.fantasy.FantasySport
 import com.propslab.inference.LocalAssistant
 import com.propslab.ocr.SlipPick
 import com.propslab.sim.Autopilot
@@ -51,13 +58,18 @@ import com.propslab.sim.Verdict
 import com.propslab.theory.HistoryCsv
 import com.propslab.theory.TheoryBench
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 /** A deep test that was pushed and has not been read back yet. */
@@ -125,6 +137,219 @@ class PropsRepository(
     }
 
     fun gameLines(): Flow<List<GameLinesUi>> = gameBoard().map { it.lines }
+
+    // ---------------------------------------------------------------- captured fantasy league
+
+    /** The newest captured league for a sport, with its teams, weekly rosters and snapshots. */
+    fun observeFantasyLeague(sport: FantasySport): Flow<FantasyLeagueWithData?> =
+        db.fantasyLeagueDao().observeLatest(sport.slug)
+
+    suspend fun latestFantasyLeague(sport: FantasySport): FantasyLeagueWithData? =
+        db.fantasyLeagueDao().latest(sport.slug)
+
+    /**
+     * Writes one screenshot's reading. A roster import replaces only that team's rows for
+     * that week; a league-table import replaces the standings. Earlier weeks are untouched,
+     * which is what lets the season track show real history instead of the latest snapshot.
+     */
+    suspend fun saveFantasyCapture(capture: FantasyCaptureSave): FantasySaveResult {
+        val dao = db.fantasyLeagueDao()
+        val sport = capture.sport
+        val now = clock()
+        val existing = dao.latest(sport.slug)
+        val teamName = capture.teamName.trim().take(40)
+        val week = capture.week.coerceIn(1, 30)
+        if (capture.kind != CaptureKind.LEAGUE_TABLE) {
+            require(teamName.isNotBlank()) { "Give the team a name before saving." }
+            require(capture.players.isNotEmpty()) { "No player rows were read, so there is nothing to save." }
+        } else {
+            require(capture.teams.isNotEmpty()) { "No team rows were read, so there is nothing to save." }
+        }
+
+        val leagueName = capture.leagueName.trim().take(60)
+            .ifBlank { existing?.league?.name ?: "My ${sport.label} league" }
+        val leagueId = existing?.league?.id
+            ?: "fl-${sport.slug}-${java.util.UUID.randomUUID().toString().take(12)}"
+        val myTeam = when (capture.kind) {
+            CaptureKind.MY_TEAM -> teamName
+            else -> existing?.league?.myTeam.orEmpty()
+        }
+        val oldWeek = dao.week("$leagueId|$week")
+        val roster = if (capture.kind == CaptureKind.LEAGUE_TABLE) emptyList() else {
+            capture.players
+                .filter { it.name.isNotBlank() }
+                .distinctBy { it.key }
+                .map { player ->
+                    FantasyRosterEntity(
+                        id = "$leagueId|$week|${Names.key(teamName)}|${player.key}",
+                        leagueId = leagueId,
+                        week = week,
+                        teamName = teamName,
+                        playerKey = player.key,
+                        playerName = player.name.take(60),
+                        slot = player.slot.take(20),
+                        position = player.position.take(12),
+                        proTeam = player.proTeam.take(12),
+                        opponent = player.opponent.take(12),
+                        projected = player.projected,
+                        seasonPoints = player.seasonAverage,
+                        athleteId = "",
+                        headshotUrl = "",
+                        teamLogoUrl = "",
+                        source = capture.platform.ifBlank { "Screenshot" },
+                        updatedUtc = now,
+                    )
+                }
+        }
+        val league = FantasyLeagueEntity(
+            id = leagueId,
+            sport = sport.slug,
+            platform = capture.platform.ifBlank { existing?.league?.platform ?: "Screenshot" },
+            name = leagueName,
+            scoring = existing?.league?.scoring?.ifBlank { "Imported screenshot" }
+                ?: "Imported screenshot",
+            myTeam = myTeam,
+            week = if (capture.kind == CaptureKind.LEAGUE_TABLE) {
+                existing?.league?.week ?: week
+            } else {
+                maxOf(existing?.league?.week ?: 0, week)
+            },
+            importedUtc = existing?.league?.importedUtc ?: now,
+            updatedUtc = now,
+            note = capture.note.take(240),
+        )
+
+        val teamRows = if (capture.kind == CaptureKind.LEAGUE_TABLE) {
+            capture.teams
+                .filter { it.name.isNotBlank() }
+                .distinctBy { it.key }
+                .map { team ->
+                    FantasyTeamEntity(
+                        leagueId = leagueId,
+                        name = team.name.take(60),
+                        owner = team.owner.take(60),
+                        rank = team.rank,
+                        wins = team.wins,
+                        losses = team.losses,
+                        ties = team.ties,
+                        pointsFor = team.pointsFor,
+                        pointsAgainst = team.pointsAgainst,
+                        isMine = myTeam.isNotBlank() && team.key == Names.key(myTeam),
+                        updatedUtc = now,
+                    )
+                }
+        } else {
+            val old = dao.team(leagueId, teamName)
+            listOf(
+                FantasyTeamEntity(
+                    leagueId = leagueId,
+                    name = teamName,
+                    owner = old?.owner.orEmpty(),
+                    rank = old?.rank ?: 0,
+                    wins = old?.wins ?: 0,
+                    losses = old?.losses ?: 0,
+                    ties = old?.ties ?: 0,
+                    pointsFor = old?.pointsFor,
+                    pointsAgainst = old?.pointsAgainst,
+                    isMine = capture.kind == CaptureKind.MY_TEAM || old?.isMine == true,
+                    updatedUtc = now,
+                ),
+            )
+        }
+
+        val weekRow = if (capture.kind == CaptureKind.LEAGUE_TABLE) null else {
+            val projected = capture.players
+                .filter { FantasySlots.isStarter(it.slot) }
+                .mapNotNull { it.projected }
+                .takeIf { it.isNotEmpty() }
+                ?.sum()
+            FantasyWeekEntity(
+                id = "$leagueId|$week",
+                leagueId = leagueId,
+                week = week,
+                myTeam = if (capture.kind == CaptureKind.MY_TEAM) teamName else oldWeek?.myTeam.orEmpty(),
+                opponent = if (capture.kind == CaptureKind.OPPONENT) teamName else oldWeek?.opponent.orEmpty(),
+                myProjected = if (capture.kind == CaptureKind.MY_TEAM) projected else oldWeek?.myProjected,
+                oppProjected = if (capture.kind == CaptureKind.OPPONENT) projected else oldWeek?.oppProjected,
+                myScore = oldWeek?.myScore,
+                oppScore = oldWeek?.oppScore,
+                note = oldWeek?.note ?: "Imported from ${capture.platform.ifBlank { "a screenshot" }}.",
+                updatedUtc = now,
+            )
+        }
+
+        db.withTransaction {
+            dao.upsertLeague(league)
+            if (capture.kind == CaptureKind.LEAGUE_TABLE) {
+                dao.deleteTeams(leagueId)
+            } else if (capture.kind == CaptureKind.MY_TEAM) {
+                dao.clearMine(leagueId)
+            }
+            dao.upsertTeams(teamRows)
+            if (capture.kind != CaptureKind.LEAGUE_TABLE) {
+                dao.clearRoster(leagueId, week, teamName)
+                dao.upsertRoster(roster)
+            }
+            if (weekRow != null) dao.upsertWeek(weekRow)
+        }
+
+        return FantasySaveResult(
+            leagueId = leagueId,
+            players = roster.size,
+            teams = teamRows.size,
+        )
+    }
+
+    /**
+     * Looks up headshots and club logos for a saved league. These are public ESPN assets;
+     * the screenshot never leaves the device. A miss leaves the initials placeholder rather
+     * than putting a different player's face on the card.
+     */
+    suspend fun enrichFantasyLeague(leagueId: String): FantasyAssetReport {
+        val dao = db.fantasyLeagueDao()
+        val saved = dao.byId(leagueId) ?: return FantasyAssetReport()
+        val sport = FantasySport.fromSlug(saved.league.sport) ?: return FantasyAssetReport()
+        val teams = runCatching { FantasyAssets.fetchTeams(sport) }.getOrDefault(emptyList())
+        val targets = saved.roster
+            .groupBy { it.playerKey }
+            .values
+            .mapNotNull { rows -> rows.firstOrNull() }
+            .filter { it.playerName.isNotBlank() && (it.headshotUrl.isBlank() || it.teamLogoUrl.isBlank()) }
+            .take(160)
+        val gate = Semaphore(4)
+        val found = coroutineScope {
+            targets.map { row ->
+                async {
+                    gate.withPermit {
+                        runCatching {
+                            FantasyAssets.findPlayer(
+                                name = row.playerName,
+                                sport = sport,
+                                teams = teams,
+                                preferredTeam = row.proTeam,
+                            )
+                        }.getOrNull()?.let { asset ->
+                            val headshot = asset.headshotUrl.ifBlank {
+                                FantasyAssets.headshotUrl(sport, asset.athleteId)
+                            }
+                            if (headshot.isBlank() && asset.teamLogoUrl.isBlank()) return@withPermit false
+                            dao.setPlayerAssets(
+                                leagueId = leagueId,
+                                playerKey = row.playerKey,
+                                athleteId = asset.athleteId,
+                                headshotUrl = headshot.ifBlank { row.headshotUrl },
+                                teamLogoUrl = asset.teamLogoUrl.ifBlank { row.teamLogoUrl },
+                                proTeam = asset.teamCode.ifBlank { row.proTeam },
+                                position = row.position,
+                            )
+                            true
+                        } ?: false
+                    }
+                }
+            }.awaitAll()
+        }
+        return FantasyAssetReport(tried = targets.size, found = found.count { it }, teams = teams.size)
+    }
 
     /** A snapshot of the slate for the agent tools. */
     override suspend fun props(): List<AgentProp> = slate().first().map { ui ->

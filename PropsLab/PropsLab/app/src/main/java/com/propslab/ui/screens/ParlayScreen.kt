@@ -20,6 +20,9 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,12 +49,14 @@ import com.propslab.data.ParlayUi
 import com.propslab.data.PropsRepository
 import com.propslab.settings.AppSettings
 import com.propslab.settings.stakeWord
+import com.propslab.ui.components.ActionButton
 import com.propslab.ui.components.AnimatedPercent
 import com.propslab.ui.components.Badge
 import com.propslab.ui.components.ChoiceChip
 import com.propslab.ui.components.Metric
 import com.propslab.ui.components.Panel
 import com.propslab.ui.components.PlainLink
+import com.propslab.ui.components.TeamMark
 import com.propslab.ui.fmtLine
 import com.propslab.ui.fmtOdds
 import com.propslab.ui.theme.Palette
@@ -109,42 +114,49 @@ fun ParlayScreen(onBack: () -> Unit, onOpenPlain: () -> Unit, onOpenPremium: () 
     val repo = rememberRepo()
     val vm: ParlayViewModel = viewModel(factory = viewModelFactory { initializer { ParlayViewModel(repo) } })
     val state by vm.state.collectAsStateWithLifecycle()
+    var slipTicket by remember { mutableStateOf<ParlayTicketUi?>(null) }
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-            bottom = 44.dp,
-        ),
-    ) {
-        item {
-            Text(
-                "\u2039  Best bets",
-                Modifier.clickable(onClick = onBack).padding(horizontal = 20.dp, vertical = 10.dp),
-                style = MaterialTheme.typography.labelLarge, color = Palette.Dust,
-            )
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
+                bottom = 44.dp,
+            ),
+        ) {
+            item {
+                Text(
+                    "\u2039  Best bets",
+                    Modifier.clickable(onClick = onBack).padding(horizontal = 20.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.labelLarge, color = Palette.Dust,
+                )
+            }
+            item { ParlayHeader(state, onOpenPlain) }
+            item { BudgetPanel(state, vm) }
+            item { PushPanel(state, vm) }
+            if (state.loaded && state.tickets.isEmpty()) {
+                item { EmptyParlay(state) }
+            }
+            items(state.tickets, key = { it.key }) { ticket ->
+                ParlayCard(
+                    ticket = ticket,
+                    strategies = state.strategies,
+                    eligible = state.eligible[ticket.key].orEmpty(),
+                    onPick = { id -> vm.setStrategy(ticket.key, id) },
+                    onOpenSlip = { slipTicket = ticket },
+                )
+            }
+            if (!TierStore.allows(Feature.PARLAY_10)) {
+                item { TenLegLock(onOpenPremium) }
+            }
+            if (state.strategies.isNotEmpty()) {
+                item { ScopePanel(state.strategies) }
+            }
+            item { ParlayFooter(state) }
         }
-        item { ParlayHeader(state, onOpenPlain) }
-        item { BudgetPanel(state, vm) }
-        item { PushPanel(state, vm) }
-        if (state.loaded && state.tickets.isEmpty()) {
-            item { EmptyParlay(state) }
+        slipTicket?.let { ticket ->
+            BetSlipSheet(ticket = ticket, onDismiss = { slipTicket = null })
         }
-        items(state.tickets, key = { it.key }) { ticket ->
-            ParlayCard(
-                ticket = ticket,
-                strategies = state.strategies,
-                eligible = state.eligible[ticket.key].orEmpty(),
-                onPick = { id -> vm.setStrategy(ticket.key, id) },
-            )
-        }
-        if (!TierStore.allows(Feature.PARLAY_10)) {
-            item { TenLegLock(onOpenPremium) }
-        }
-        if (state.strategies.isNotEmpty()) {
-            item { ScopePanel(state.strategies) }
-        }
-        item { ParlayFooter(state) }
     }
 }
 
@@ -330,6 +342,7 @@ private fun ParlayCard(
     strategies: List<ParlayStrategyUi>,
     eligible: Set<String>,
     onPick: (String) -> Unit,
+    onOpenSlip: () -> Unit,
 ) {
     val shape = RoundedCornerShape(18.dp)
     Column(
@@ -445,6 +458,13 @@ private fun ParlayCard(
             ticket.explanation,
             style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
         )
+        Spacer(Modifier.height(14.dp))
+        ActionButton(
+            label = "Make bet slip",
+            onClick = onOpenSlip,
+            tone = Palette.Over,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -461,6 +481,10 @@ private fun ParlayLegRow(number: Int, leg: ParlayLegUi) {
             Modifier.width(20.dp),
             style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
         )
+        if (!pick.teamCode.isNullOrBlank()) {
+            TeamMark(pick.teamCode, size = 28.dp)
+            Spacer(Modifier.width(8.dp))
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 title,

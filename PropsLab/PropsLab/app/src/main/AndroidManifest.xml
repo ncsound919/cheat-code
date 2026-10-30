@@ -2,8 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--
       The network is used for: two read-only odds/results GETs, the model shop's public
-      Hugging Face reads, the GitHub release check and an optional cloud model. Nothing is
-      uploaded and no wager can be placed.
+      Hugging Face reads, the GitHub release check and an optional cloud model. After a
+      fantasy capture, only player names are sent to ESPN's public directory to fetch
+      headshots and club logos; the screenshot itself stays on the device. A bet slip is
+      shared only through Android's chooser, and no wager can be placed.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- The updater hands a downloaded APK to Android's installer, which asks the user. -->

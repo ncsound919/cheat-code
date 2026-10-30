@@ -43,7 +43,7 @@ import com.propslab.domain.Staking
 import com.propslab.ui.components.KeyValue
 import com.propslab.ui.components.SectionTitle
 import com.propslab.ui.components.SplitRing
-import com.propslab.ui.components.TeamAvatar
+import com.propslab.ui.components.TeamMark
 import com.propslab.ui.fmtLine
 import com.propslab.ui.fmtOdds
 import com.propslab.ui.fmtPct
@@ -124,7 +124,7 @@ private fun BackRow(onBack: () -> Unit) {
 @Composable
 private fun PlayerHeader(p: PropUi) {
     Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-        TeamAvatar(p.playerName, p.teamCode, 52.dp)
+        TeamMark(p.teamCode, size = 52.dp)
         Spacer(Modifier.width(14.dp))
         Column {
             Text(p.playerName, style = MaterialTheme.typography.headlineMedium, color = Palette.Chalk)

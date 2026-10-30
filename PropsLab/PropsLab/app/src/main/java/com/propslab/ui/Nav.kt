@@ -38,6 +38,7 @@ import com.propslab.ui.screens.NewsScreen
 import com.propslab.ui.screens.PremiumScreen
 import com.propslab.ui.screens.UpdatesScreen
 import com.propslab.ui.screens.DetailScreen
+import com.propslab.ui.screens.FantasyCaptureScreen
 import com.propslab.ui.screens.FantasyScreen
 import com.propslab.ui.screens.FeedScreen
 import com.propslab.ui.screens.ImportScreen
@@ -132,7 +133,11 @@ fun AppNav() {
                 FantasyScreen(
                     onBack = { nav.popBackStack() },
                     onOpenPremium = { nav.navigate("premium") },
+                    onOpenCapture = { nav.navigate("fantasy-capture") },
                 )
+            }
+            composable("fantasy-capture") {
+                FantasyCaptureScreen(onBack = { nav.popBackStack() })
             }
             composable("news") {
                 NewsScreen(

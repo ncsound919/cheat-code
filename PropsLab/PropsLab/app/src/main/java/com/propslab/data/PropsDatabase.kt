@@ -16,8 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AvailabilitySignalEntity::class, HistoryPropEntity::class, ConsoleTurn::class,
         ClaimFormulaEntity::class, GameLineEntity::class,
         LearningBetEntity::class, CalibrationEntity::class,
+        FantasyLeagueEntity::class, FantasyTeamEntity::class, FantasyRosterEntity::class,
+        FantasyWeekEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 abstract class PropsDatabase : RoomDatabase() {
@@ -30,6 +32,7 @@ abstract class PropsDatabase : RoomDatabase() {
     abstract fun consoleDao(): ConsoleDao
     abstract fun claimDao(): ClaimDao
     abstract fun learningDao(): LearningDao
+    abstract fun fantasyLeagueDao(): FantasyLeagueDao
 
     companion object {
 
@@ -372,11 +375,103 @@ abstract class PropsDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds captured fantasy leagues. Four new tables, no changes to an existing row: a
+         * phone with a ledger keeps every bet while gaining the weekly roster history.
+         */
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `fantasy_leagues` (
+                        `id` TEXT NOT NULL,
+                        `sport` TEXT NOT NULL,
+                        `platform` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `scoring` TEXT NOT NULL,
+                        `myTeam` TEXT NOT NULL,
+                        `week` INTEGER NOT NULL,
+                        `importedUtc` INTEGER NOT NULL,
+                        `updatedUtc` INTEGER NOT NULL,
+                        `note` TEXT NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_leagues_sport` ON `fantasy_leagues` (`sport`)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `fantasy_teams` (
+                        `leagueId` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `owner` TEXT NOT NULL,
+                        `rank` INTEGER NOT NULL,
+                        `wins` INTEGER NOT NULL,
+                        `losses` INTEGER NOT NULL,
+                        `ties` INTEGER NOT NULL,
+                        `pointsFor` REAL,
+                        `pointsAgainst` REAL,
+                        `isMine` INTEGER NOT NULL,
+                        `updatedUtc` INTEGER NOT NULL,
+                        PRIMARY KEY(`leagueId`, `name`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_teams_leagueId` ON `fantasy_teams` (`leagueId`)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `fantasy_roster` (
+                        `id` TEXT NOT NULL,
+                        `leagueId` TEXT NOT NULL,
+                        `week` INTEGER NOT NULL,
+                        `teamName` TEXT NOT NULL,
+                        `playerKey` TEXT NOT NULL,
+                        `playerName` TEXT NOT NULL,
+                        `slot` TEXT NOT NULL,
+                        `position` TEXT NOT NULL,
+                        `proTeam` TEXT NOT NULL,
+                        `opponent` TEXT NOT NULL,
+                        `projected` REAL,
+                        `seasonPoints` REAL,
+                        `athleteId` TEXT NOT NULL,
+                        `headshotUrl` TEXT NOT NULL,
+                        `teamLogoUrl` TEXT NOT NULL,
+                        `source` TEXT NOT NULL,
+                        `updatedUtc` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_roster_leagueId` ON `fantasy_roster` (`leagueId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_roster_leagueId_week` ON `fantasy_roster` (`leagueId`, `week`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_roster_playerKey` ON `fantasy_roster` (`playerKey`)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `fantasy_weeks` (
+                        `id` TEXT NOT NULL,
+                        `leagueId` TEXT NOT NULL,
+                        `week` INTEGER NOT NULL,
+                        `myTeam` TEXT NOT NULL,
+                        `opponent` TEXT NOT NULL,
+                        `myProjected` REAL,
+                        `oppProjected` REAL,
+                        `myScore` REAL,
+                        `oppScore` REAL,
+                        `note` TEXT NOT NULL,
+                        `updatedUtc` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_fantasy_weeks_leagueId` ON `fantasy_weeks` (`leagueId`)")
+            }
+        }
+
         fun build(context: Context): PropsDatabase =
             Room.databaseBuilder(context, PropsDatabase::class.java, "propslab.db")
                 .addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-                    MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
+                    MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
                 )
                 .build()
     }

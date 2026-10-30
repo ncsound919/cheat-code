@@ -44,7 +44,7 @@ import com.propslab.ui.components.FixtureNotice
 import com.propslab.ui.components.LiveBadge
 import com.propslab.ui.components.PlainLink
 import com.propslab.ui.components.SplitBar
-import com.propslab.ui.components.TeamAvatar
+import com.propslab.ui.components.TeamMark
 import com.propslab.ui.fmtDay
 import com.propslab.ui.fmtLine
 import com.propslab.ui.fmtOdds
@@ -314,7 +314,7 @@ private fun PropRow(p: PropUi, onClick: () -> Unit) {
             .alpha(if (p.available) 1f else 0.65f),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TeamAvatar(p.playerName, p.teamCode, 42.dp)
+            TeamMark(p.teamCode, size = 42.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(p.playerName, style = MaterialTheme.typography.titleMedium, color = Palette.Chalk, maxLines = 1, overflow = TextOverflow.Ellipsis)

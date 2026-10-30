@@ -32,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -39,6 +40,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.propslab.billing.Feature
 import com.propslab.billing.TierStore
 import com.propslab.data.AvailabilityStatus
+import com.propslab.fantasy.FantasyAssets
 import com.propslab.fantasy.FantasyCall
 import com.propslab.fantasy.FantasyDesk
 import com.propslab.fantasy.FantasyDeskUi
@@ -58,8 +60,10 @@ import com.propslab.ui.components.Badge
 import com.propslab.ui.components.ChoiceChip
 import com.propslab.ui.components.Panel
 import com.propslab.ui.components.PremiumGate
+import com.propslab.ui.components.RemoteImage
 import com.propslab.ui.fmtAgo
 import com.propslab.ui.fmtDay
+import com.propslab.ui.initials
 import com.propslab.ui.theme.Palette
 import kotlinx.coroutines.launch
 
@@ -241,14 +245,17 @@ class FantasyViewModel(private val store: FantasyWatchlistStore) : ViewModel() {
  * rest of the app reads. The free build sees a placeholder and spends no request.
  */
 @Composable
-fun FantasyScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
+fun FantasyScreen(onBack: () -> Unit, onOpenPremium: () -> Unit, onOpenCapture: () -> Unit) {
     val context = LocalContext.current
+    val repo = rememberRepo()
     val vm: FantasyViewModel = viewModel(
         factory = viewModelFactory {
             initializer { FantasyViewModel(FantasyWatchlistStore(context)) }
         },
     )
     val premium = TierStore.allows(Feature.FANTASY_DESK)
+    val league by remember(vm.sport) { repo.observeFantasyLeague(vm.sport) }
+        .collectAsStateWithLifecycle(initialValue = null)
 
     LaunchedEffect(premium, vm.sport) {
         if (premium) vm.refresh()
@@ -279,8 +286,8 @@ fun FantasyScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Recent form, start/sit calls and the league injury report for football and " +
-                        "basketball. Read from ESPN's public box scores; no account and no key.",
+                    "Capture your lineup and your opponent's, then get a short start/sit call for every " +
+                        "player. Recent form and injuries come from ESPN's public box scores; no account and no key.",
                     style = MaterialTheme.typography.bodyMedium, color = Palette.Dust,
                 )
                 Spacer(Modifier.height(16.dp))
@@ -328,6 +335,14 @@ fun FantasyScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
                 busy = vm.busy,
                 message = vm.message,
                 onRefresh = { vm.refresh(force = true) },
+            )
+        }
+
+        item {
+            FantasyLeagueSection(
+                data = league,
+                desk = vm.desk,
+                onCapture = onOpenCapture,
             )
         }
 
@@ -501,9 +516,26 @@ private fun PlayerCard(
     onSelectLogSeason: (String) -> Unit,
 ) {
     val advice = FantasyDesk.advise(player)
-    val hasAthleteId = player.lines.any { it.athleteId.isNotBlank() }
+    val athleteId = player.lines.firstOrNull { it.athleteId.isNotBlank() }?.athleteId.orEmpty()
+    val hasAthleteId = athleteId.isNotBlank()
+    val headshot = if (hasAthleteId) FantasyAssets.headshotUrl(player.sport, athleteId) else ""
     Panel(Modifier.padding(horizontal = 20.dp, vertical = 7.dp)) {
         Row(verticalAlignment = Alignment.Top) {
+            Box(
+                Modifier.size(44.dp).clip(RoundedCornerShape(13.dp))
+                    .background(Palette.Raised).border(1.dp, Palette.Hairline, RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                RemoteImage(
+                    url = headshot,
+                    contentDescription = "${player.name} headshot",
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(13.dp)),
+                    fallback = {
+                        Text(initials(player.name), style = MaterialTheme.typography.labelMedium, color = Palette.Dust)
+                    },
+                )
+            }
+            Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     player.name,
@@ -826,11 +858,10 @@ private fun InjuryRow(injury: FantasyInjury) {
 @Composable
 private fun FantasyFooter(desk: FantasyDeskUi, premium: Boolean) {
     Column(Modifier.padding(horizontal = 20.dp, vertical = 22.dp)) {
-        Text(
-            "Scoring: basketball is PTS + 1.2 REB + 1.5 AST + 3 3PM; football is half-PPR. " +
-                "The call compares a player with his own recent baseline, because the app does not know " +
-                "your league, your roster or his opponent. It is advice about form, not a forecast of a " +
-                "game, and it places nothing.",
+        Text(                    "Scoring: basketball is PTS + 1.2 REB + 1.5 AST + 3 3PM; football is half-PPR. " +
+                "The league calls use your captured slots, the imported projection and ESPN's public form. " +
+                "They do not know your league's exact scoring or the opponent's defensive matchup. It is " +
+                "advice about form, not a forecast of a game, and it places nothing.",
             style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
         )
         if (premium && desk.fetchedUtc > 0L) {
