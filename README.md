@@ -13,7 +13,7 @@ Cheat Code is not a tip sheet. A thesis is written in plain English, compiled in
 
 ## Download
 
-[cheat-code.vercel.app](https://cheat-code.vercel.app/) — signed APK, Android 10+, arm64.
+[propslab.vercel.app](https://propslab.vercel.app/) — signed APK, Android 10+, arm64.
 
 ## Repository map
 

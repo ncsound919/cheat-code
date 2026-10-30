@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Cheat Code one color">
+  <rect width="512" height="512" rx="116" fill="#0B1018"/>
+  <rect width="512" height="512" rx="116" fill="none" stroke="#EDEAE2" stroke-width="3" opacity="0.35"/>
+
+  <!-- ring as a single chalk outline, gap preserved -->
+  <circle cx="256" cy="248" r="150" fill="none" stroke="#EDEAE2" stroke-width="22" stroke-linecap="round"
+          stroke-dasharray="820 942" transform="rotate(-90 256 248)"/>
+
+  <!-- edge polyline -->
+  <polyline points="184,300 236,252 282,284 336,206" fill="none" stroke="#EDEAE2" stroke-width="18"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="336" cy="206" r="13" fill="#EDEAE2"/>
+</svg>

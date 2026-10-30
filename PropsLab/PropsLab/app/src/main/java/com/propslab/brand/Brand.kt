@@ -18,7 +18,7 @@ object Brand {
     const val TAGLINE = "Pro-level rigor. Plain words. No account needed."
 
     /** The deployment the app is sold from. Change this one line to ship a fork. */
-    const val SITE = "https://cheat-code.vercel.app"
+    const val SITE = "https://propslab.vercel.app"
 
     const val WEBSITE = "$SITE/"
     const val MANUAL = "$SITE/manual.html"
