@@ -27,6 +27,8 @@
   ],
   "redirects": [
     { "source": "/get", "destination": "/download.html", "permanent": true },
+    { "source": "/download", "destination": "/download.html", "permanent": true },
+    { "source": "/manual", "destination": "/manual.html", "permanent": true },
     { "source": "/premium", "destination": "/#pricing", "permanent": false }
   ]
 }
