@@ -105,6 +105,27 @@ class BetSlipTest {
     }
 
     @Test
+    fun `moving a line toward you shortens the price and raises the chance`() {
+        val candidate = candidate(
+            "LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56, 24.5,
+        ).copy(mean = 24.5, spread = 6.0)
+
+        val quoted = ParlayTickets.reprice(candidate, 0.0, circadian = false)
+        val eased = ParlayTickets.reprice(candidate, -2.0, circadian = false)
+
+        assertEquals(22.5, eased.line!!, 1e-9)
+        assertEquals(-2.0, eased.shiftPts, 1e-9)
+        assertTrue(
+            "a shorter line must pay a shorter price",
+            Odds.americanToDecimal(eased.odds) < Odds.americanToDecimal(quoted.odds),
+        )
+        assertTrue(
+            "a shorter line must be more likely",
+            eased.winChance > quoted.winChance,
+        )
+    }
+
+    @Test
     fun `an edited leg writes the moved line into the tracker text`() {
         val candidate = candidate(
             "LeBron James", "LAL", "LeBron James Over 24.5 Points", -115, 0.56, 24.5,

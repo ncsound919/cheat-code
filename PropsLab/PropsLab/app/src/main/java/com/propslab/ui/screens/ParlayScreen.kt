@@ -278,18 +278,25 @@ private fun PushPanel(state: ParlayUi, vm: ParlayViewModel) {
             Column(Modifier.weight(1f)) {
                 Text("LINE PUSH", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
                 Text(
-                    if (state.pushPoints <= 0.0) "Quoted lines"
-                    else "+%.1f points out for a longer price".format(state.pushPoints),
+                    when {
+                        state.pushPoints == 0.0 -> "Quoted lines"
+                        state.pushPoints > 0.0 -> "+%.1f points out for a longer price".format(state.pushPoints)
+                        else -> "%.1f points toward you for a shorter price".format(-state.pushPoints)
+                    },
                     style = MaterialTheme.typography.titleMedium, color = Palette.Chalk,
                 )
             }
-            Badge(if (state.pushPoints <= 0.0) "OFF" else "ESTIMATED", if (state.pushPoints <= 0.0) Palette.Faint else Palette.Caution)
+            Badge(
+                if (state.pushPoints == 0.0) "OFF" else "ESTIMATED",
+                if (state.pushPoints == 0.0) Palette.Faint else Palette.Caution,
+            )
         }
         Spacer(Modifier.height(6.dp))
         Slider(
             value = state.pushPoints.toFloat(),
             onValueChange = { vm.setPush(it.toDouble()) },
-            valueRange = 0f..4f,
+            valueRange = -4f..4f,
+            steps = 15,
             colors = SliderDefaults.colors(
                 thumbColor = Palette.Chalk,
                 activeTrackColor = Palette.Over,
@@ -297,19 +304,19 @@ private fun PushPanel(state: ParlayUi, vm: ParlayViewModel) {
             ),
         )
         Row(Modifier.fillMaxWidth()) {
-            Text("0", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
+            Text("−4 pts", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
             Spacer(Modifier.weight(1f))
-            Text("2", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
+            Text("quoted", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
             Spacer(Modifier.weight(1f))
-            Text("4 pts", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
+            Text("+4 pts", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Each point pushes the number away from you — an Over needs one more, an Under one fewer — so " +
-                "the bet gets less likely and the price gets longer. Every player leg is repriced against " +
-                "its own distribution, holding the book's markup where it was quoted, so the ticket's " +
-                "chance and price move in opposite directions. A pushed price is an estimate: no book " +
-                "quoted it. Game markets keep their quoted line.",
+            "Moving the number toward you — an Over needs one fewer, an Under one more — makes the bet " +
+                "more likely and shortens the price. Pushing it away does the opposite. Every player leg is " +
+                "repriced against its own distribution, holding the book's markup where it was quoted, so " +
+                "the ticket's chance and price move in opposite directions. A moved price is an estimate: " +
+                "no book quoted it. Game markets keep their quoted line.",
             style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
         )
         Spacer(Modifier.height(14.dp))

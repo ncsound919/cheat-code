@@ -259,6 +259,21 @@ class ParlayLabTest {
         assertTrue(pushed.explanation.contains("moved 2.0 points"))
     }
 
+    @Test fun aLineMovedTowardYouIsShorterAndMoreLikely() {
+        val legs = (1..3).map { i ->
+            candidate(key = "p$i", game = "g$i", subject = "Player $i", odds = -110, pWin = 0.6, edge = 3.0)
+                .copy(line = 24.5, mean = 25.0, spread = 5.0, overProb = 0.6, side = Side.OVER)
+        }
+        val plain = ParlayTickets.build(legs, 3)!!
+        val eased = ParlayTickets.build(legs, 3, ParlayOptions(pushPoints = -2.0))!!
+        assertEquals(3, eased.legs.count { it.shiftPts == -2.0 })
+        assertEquals(22.5, eased.legs.first().line!!, 1e-9)
+        assertTrue(eased.decimal < plain.decimal)
+        assertTrue(eased.probability > plain.probability)
+        assertTrue(eased.explanation.contains("toward you"))
+        assertTrue(eased.explanation.contains("shorter price"))
+    }
+
     @Test fun aGameMarketKeepsItsLineWhenPushIsOn() {
         val game = ParlayCandidate(
             key = "g:atl", gameId = "g-atl", subject = null, label = "ATL moneyline",

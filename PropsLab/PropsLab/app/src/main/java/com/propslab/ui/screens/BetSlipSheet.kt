@@ -157,7 +157,7 @@ fun BetSlipSheet(
             Spacer(Modifier.height(6.dp))
             Text(
                 "The board's top-ranked players are already on the slip, with each club's mark. " +
-                    "Swap a leg or move its line; the chance and price follow.",
+                    "Swap a leg or move its line either way; the chance and price follow.",
                 style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
             )
             val sharedGames = legs.size - legs.map { it.candidate.gameId }.distinct().size
@@ -391,10 +391,10 @@ private fun EditableLegRow(
                 )
             }
             Slider(
-                value = leg.shiftPts.toFloat().coerceIn(0f, 4f),
+                value = leg.shiftPts.toFloat().coerceIn(-4f, 4f),
                 onValueChange = { onShift(it.toDouble()) },
-                valueRange = 0f..4f,
-                steps = 7,
+                valueRange = -4f..4f,
+                steps = 15,
                 modifier = Modifier.fillMaxWidth().padding(start = 46.dp).height(34.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = Palette.Chalk,
@@ -403,6 +403,8 @@ private fun EditableLegRow(
                 ),
             )
             Row(Modifier.fillMaxWidth().padding(start = 58.dp)) {
+                Text("−4 pts", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
+                Spacer(Modifier.weight(1f))
                 Text("quoted", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
                 Spacer(Modifier.weight(1f))
                 Text("+4 pts", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)

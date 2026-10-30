@@ -488,11 +488,17 @@ object ParlayTickets {
         }
         val anchorText = " The biggest gap on the ticket is ${anchor.label}."
         val pushable = legs.count { it.candidate.pushable }
-        val push = if (options.pushPoints != 0.0) {
-            " Every pushable leg was moved ${"%.1f".format(options.pushPoints)} points against you, out for a " +
-                "longer price; $pushable of $size legs could be moved and the rest kept their quote. " +
-                "The bigger price is bought with a lower chance, not given away."
-        } else ""
+        val push = when {
+            options.pushPoints > 0.0 ->
+                " Every pushable leg was moved ${"%.1f".format(options.pushPoints)} points against you, out for a " +
+                    "longer price; $pushable of $size legs could be moved and the rest kept their quote. " +
+                    "The bigger price is bought with a lower chance, not given away."
+            options.pushPoints < 0.0 ->
+                " Every pushable leg was moved ${"%.1f".format(-options.pushPoints)} points toward you, for a " +
+                    "shorter price; $pushable of $size legs could be moved and the rest kept their quote. " +
+                    "The shorter price buys a higher chance, not a free one."
+            else -> ""
+        }
         val circadian = if (options.circadian && legs.any { it.circadianPct > 0.0 }) {
             " A circadian correction (up to 1.5% of the projection) is applied to each player leg from tip-off hour and travel."
         } else ""
@@ -678,7 +684,7 @@ object ParlayLab {
             if (board.strategies.isEmpty()) {
                 add("The sandbox has not produced a formula yet, so there is nothing to build a ticket from.")
             }
-            if (controls.pushPoints > 0.0 && withStakes.any { it.inferredLegs > 0 }) {
+            if (controls.pushPoints != 0.0 && withStakes.any { it.inferredLegs > 0 }) {
                 add("Some pushed prices are inferred from the row's probability because no game log is stored for it. They are estimates, not quotes.")
             }
             if (budget > 0.0 && withStakes.isNotEmpty() && staked <= 0.0) {

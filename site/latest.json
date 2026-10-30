@@ -4,7 +4,7 @@
   "published": "2026-10-30",
   "apk": "cheat-code.apk",
   "page": "https://propslab.vercel.app/download.html",
-  "size": 27563924,
-  "sha256": "fd1cf81af7d937746deb2106edd4aeb9c04ad1bb7b605432d07bc38f4058638a",
-  "notes": "Signed release, arm64 only, Android 10 or newer. Adds editable bet slips: swap a leg or move a line and the chance, price and shared image follow. Fantasy desk included. Paper bets only; no account required."
+  "size": 27563940,
+  "sha256": "171bfd2f404fdb0ecde961f71986144818a0c41342d96fe8c288977dfb2969cd",
+  "notes": "Signed release, arm64 only, Android 10 or newer. Editable bet slips: swap a leg and move any player line either way, and the chance, price and shared image follow. Fantasy desk included. Paper bets only; no account required."
 }
