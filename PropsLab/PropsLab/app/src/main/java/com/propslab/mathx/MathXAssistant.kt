@@ -18,10 +18,23 @@ import kotlin.math.abs
 class MathXAssistant(
     private val model: LocalMathModel,
     private val fallback: LocalAssistant = TemplateAssistant(),
+    private val clock: () -> Long = System::currentTimeMillis,
 ) : LocalAssistant {
+
+    /**
+     * When the phone could not finish a reply in time, the template is the answer anyway.
+     *
+     * A sync asks for a sentence on every priced prop, and on a device where one prompt pass
+     * already takes longer than the timeout each of those is a full CPU pass that is thrown
+     * away. After one miss the model is left alone for a while instead of being asked the same
+     * question sixteen hundred times.
+     */
+    @Volatile
+    private var quietUntilUtc = 0L
 
     override suspend fun explain(input: ExplainInput): String {
         if (model.status() !is LocalModelStatus.Ready) return fallback.explain(input)
+        if (clock() < quietUntilUtc) return fallback.explain(input)
 
         val prompt = MathXPrompts.build(query(input), MathXMode.PROBABILITY)
         // A local model must never hold up Room seeding or a screen. Timeout is a
@@ -35,7 +48,11 @@ class MathXAssistant(
                 null
             }
         }?.trim()
-        if (raw.isNullOrEmpty() || raw.length > MAX_REPLY_CHARS) return fallback.explain(input)
+        if (raw.isNullOrEmpty() || raw.length > MAX_REPLY_CHARS) {
+            // The turn did not arrive: too slow or refused. Stop asking for a while.
+            quietUntilUtc = clock() + QUIET_MS
+            return fallback.explain(input)
+        }
 
         return if (AssistantGuard.isSafe(raw, allowedPercents(input))) raw else fallback.explain(input)
     }
@@ -80,6 +97,9 @@ class MathXAssistant(
         const val MAX_REPLY_CHARS = 1200
         const val MAX_TOKENS = 192
         const val REPLY_TIMEOUT_MS = 6_000L
+
+        /** How long the model is left alone after it misses a reply. */
+        const val QUIET_MS = 10 * 60 * 1000L
     }
 }
 

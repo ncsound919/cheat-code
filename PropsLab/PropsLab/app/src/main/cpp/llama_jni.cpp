@@ -96,9 +96,31 @@ void throw_runtime(JNIEnv * env, const std::string & message) {
     }
 }
 
+/**
+ * llama.cpp writes its own diagnostics to stderr, and an Android app's stderr goes
+ * nowhere. A refused batch therefore looked like a bare `rc=-1` with no reason. The
+ * runtime's logger is forwarded to logcat under the same tag, so a device can say why
+ * a prompt was rejected without a debugger attached.
+ */
+void log_to_logcat(ggml_log_level level, const char * text, void *) {
+    if (text == nullptr) {
+        return;
+    }
+    int priority = ANDROID_LOG_DEBUG;
+    if (level == GGML_LOG_LEVEL_ERROR) {
+        priority = ANDROID_LOG_ERROR;
+    } else if (level == GGML_LOG_LEVEL_WARN) {
+        priority = ANDROID_LOG_WARN;
+    }
+    __android_log_write(priority, "PropsLabLlama", text);
+}
+
 void ensure_backend() {
     static std::once_flag once;
-    std::call_once(once, [] { llama_backend_init(); });
+    std::call_once(once, [] {
+        llama_log_set(log_to_logcat, nullptr);
+        llama_backend_init();
+    });
 }
 
 std::vector<llama_token> tokenize(const llama_vocab * vocab, const std::string & text, bool add_special) {
@@ -133,6 +155,61 @@ std::string token_to_text(const llama_vocab * vocab, llama_token token) {
 }
 
 /**
+ * The pieces that end a turn, and must never be shown.
+ *
+ * A model that does not flag its end-of-turn token as end-of-generation will happily write
+ * the next question as well, and a fine-tuned adapter on this device does exactly that. The
+ * answer is cut here rather than trusting the sampler's stop set: the words below are the
+ * chat template's own markers, so nothing a person asked for can contain them.
+ */
+/**
+ * Reasoning is not the answer.
+ *
+ * Qwen-style models emit their working between `think` tags before the reply. The console
+ * shows what the app says, so the working is removed here: a screen full of deliberation is
+ * neither the answer nor something a bettor asked to read.
+ */
+void strip_thinking(std::string & text) {
+    static const std::string open  = "<think";
+    static const std::string close = "</think";
+    // A closing tag with no block before it: the model ended a thought it never opened, and
+    // nothing after it is part of the reply.
+    const size_t stray = text.find(close);
+    if (stray != std::string::npos && text.find(open) == std::string::npos) {
+        text.erase(stray);
+        const size_t cut = text.find_first_not_of(" \n\r\t");
+        text.erase(0, cut == std::string::npos ? text.size() : cut);
+        return;
+    }
+    size_t begin = text.find(open);
+    while (begin != std::string::npos) {
+        const size_t end = text.find(close, begin);
+        if (end == std::string::npos) {
+            // The turn was cut off mid-thought, so nothing after it is a reply yet.
+            text.erase(begin);
+            break;
+        }
+        const size_t after = text.find('>', end);
+        text.erase(begin, (after == std::string::npos ? text.size() : after + 1) - begin);
+        begin = text.find(open);
+    }
+    const size_t first = text.find_first_not_of(" \n\r\t");
+    text.erase(0, first == std::string::npos ? text.size() : first);
+}
+
+const char * stop_fragment(const std::string & text) {
+    static const char * const markers[] = {
+        "<|im_end|>", "<|im_start|>", "<|endoftext|>", "<|eot_id|>", "<|end▁of▁sentence|>",
+    };
+    for (const char * marker : markers) {
+        if (text.find(marker) != std::string::npos) {
+            return marker;
+        }
+    }
+    return nullptr;
+}
+
+/**
  * The prompt, in the model's own chat format when it ships one.
  *
  * A Qwen model asked in plain text and the same model asked through its template are not
@@ -141,8 +218,15 @@ std::string token_to_text(const llama_vocab * vocab, llama_token token) {
  */
 std::string build_prompt(Engine * engine, const std::string & system, const std::string & user) {
     if (!engine->chat_template.empty()) {
+        // A reasoning model will spend a turn thinking out loud before it answers, which
+        // on this hardware is most of a minute. Templates that expose the switch are asked
+        // for the answer directly; the working is stripped anyway, so nothing is lost.
+        const std::string system_text =
+            engine->chat_template.find("enable_thinking") != std::string::npos
+                ? system + " /no_think"
+                : system;
         const llama_chat_message messages[2] = {
-            { "system", system.c_str() },
+            { "system", system_text.c_str() },
             { "user",   user.c_str()   },
         };
         const int32_t needed = llama_chat_apply_template(engine->chat_template.c_str(), messages, 2, true, nullptr, 0);
@@ -285,10 +369,23 @@ Java_com_propslab_mathx_LlamaNative_generate(
     if (temperature <= 0.0f) {
         llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
     } else {
+        // Without a penalty a small model repeats its last sentence until the budget runs out,
+        // which on a phone is a minute of compute for a paragraph said twice.
+        llama_sampler_chain_add(sampler, llama_sampler_init_penalties(
+            llama_vocab_n_tokens(engine->vocab), 64, 1.15f, 0.0f, 0.0f));
         llama_sampler_chain_add(sampler, llama_sampler_init_top_k(top_k > 0 ? top_k : 40));
         llama_sampler_chain_add(sampler, llama_sampler_init_top_p(top_p > 0.0f ? top_p : 0.9f, 1));
         llama_sampler_chain_add(sampler, llama_sampler_init_temp(temperature));
         llama_sampler_chain_add(sampler, llama_sampler_init_dist(seed >= 0 ? static_cast<uint32_t>(seed) : 1234u));
+    }
+
+    // Every turn is its own sequence and its prompt is decoded from position 0. The cache
+    // therefore has to be empty first: with the previous turn still in it, the runtime
+    // refuses the batch ("M-RoPE requires X < Y") and every question after the first would
+    // fail for a reason that has nothing to do with the question.
+    llama_memory_t memory = llama_get_memory(engine->ctx);
+    if (memory != nullptr) {
+        llama_memory_clear(memory, true);
     }
 
     llama_batch batch = llama_batch_init(n_prompt + 1, 0, 1);
@@ -346,6 +443,24 @@ Java_com_propslab_mathx_LlamaNative_generate(
         }
         output += token_to_text(engine->vocab, token);
 
+        // A turn that writes the template marker instead of emitting it stops here, with the
+        // marker and everything after it removed.
+        if (const char * marker = stop_fragment(output)) {
+            output.erase(output.find(marker));
+            LOGI("generate: stopped at a chat marker after %d token(s)", step + 1);
+            break;
+        }
+
+        // A closing think tag with no block before it means the reply is over and the model is
+        // about to say it again. Stopping here is what turns a minute of repetition into one
+        // answer.
+        const size_t strayClose = output.find("</think");
+        if (strayClose != std::string::npos && output.find("<think") == std::string::npos) {
+            output.erase(strayClose);
+            LOGI("generate: stopped at a stray think tag after %d token(s)", step + 1);
+            break;
+        }
+
         // The next step is a single token appended to the same sequence.
         batch.token[0]     = token;
         batch.pos[0]       = position;
@@ -364,6 +479,8 @@ Java_com_propslab_mathx_LlamaNative_generate(
             break;
         }
     }
+
+    strip_thinking(output);
 
     LOGI("generate: %d prompt tokens -> %zu chars in %lld ms (budget %d)",
          n_prompt, output.size(), static_cast<long long>(since(started)), limit);

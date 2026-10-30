@@ -152,13 +152,14 @@ class LlamaCppModel(
         const val PREFERRED_MODEL = "Qwen3.5-4B-Q4_K_M.gguf"
 
         /**
-         * The adapter attached when one is present.
+         * The adapter attached by default: none.
          *
-         * The general-purpose adapter rather than the domain ones: this app writes prose
-         * about odds, not code or lab notes, and an adapter chosen silently would be a
-         * claim about what the weights do.
+         * Measured on the test phone, the bundled adapter answered a question by echoing the
+         * prompt back and then writing its own training pairs, while the same question put to
+         * the base weights got an answer. A default that talks to itself is worse than no
+         * adapter, so attaching one is a deliberate choice rather than the shipped state.
          */
-        const val DEFAULT_ADAPTER = "qwen-mix-v2.lora.f16.gguf"
+        val DEFAULT_ADAPTER: String? = null
     }
 }
 
