@@ -174,7 +174,8 @@ fun FixtureNotice(modifier: Modifier = Modifier) {
         Column(Modifier.padding(start = 12.dp)) {
             Text("Synthetic fixtures", style = MaterialTheme.typography.titleSmall, color = Palette.Chalk)
             Text(
-                "Names, lines, odds and probabilities here are invented test data. They are not real quotes or predictions.",
+                "Names, lines, odds and probabilities here are invented test data. They are not real quotes or predictions. " +
+                    "The football slate uses real clubs and real players so the marks and markets can be checked; its lines and chances are invented too.",
                 style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
             )
         }

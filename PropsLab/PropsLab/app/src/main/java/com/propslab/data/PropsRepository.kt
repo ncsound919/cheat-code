@@ -29,6 +29,7 @@ import com.propslab.domain.Pricing
 import com.propslab.domain.RejectReason
 import com.propslab.domain.Settlement
 import com.propslab.domain.Side
+import com.propslab.domain.Sports
 import com.propslab.domain.Staking
 import com.propslab.feed.FeedSync
 import com.propslab.feed.GameMarkets
@@ -108,7 +109,11 @@ class PropsRepository(
         db.learningDao().observeCalibration(),
     ) { rows, fits ->
         val fit = fits.firstOrNull { it.track == LearningTrack.PROP }?.toFit() ?: PlattFit.IDENTITY
-        rows.map { it.toUi(fit) }
+        // The stored correction is fitted on the row population that existed when it was
+        // learned, which until now was basketball only. Applying it to a football market
+        // would transfer a slope across two different scoring distributions, so football
+        // starts from the model's own probabilities until its own results justify a fit.
+        rows.map { it.toUi(if (it.sport == Sports.BASKETBALL) fit else PlattFit.IDENTITY) }
     }
 
     /** The raw board, before the correction. The learning ledger fits on this. */
@@ -1148,8 +1153,15 @@ class PropsRepository(
     }
 
     suspend fun seedFixturesIfEmpty() {
-        if (db.slateDao().predictionCount() > 0) return
-        FixtureSeeder(db, assistant, clock()).seed()
+        if (db.slateDao().predictionCount() == 0) {
+            FixtureSeeder(db, assistant, clock()).seed()
+            return
+        }
+        // An install seeded before football existed has a full basketball board, so the
+        // empty-table check above will never fire again. Top up just the league it lacks.
+        if (db.slateDao().predictionCountForSport(Sports.FOOTBALL) == 0) {
+            FixtureSeeder(db, assistant, clock()).seedFootball()
+        }
     }
 
     override suspend fun audit(kind: String, subjectId: String, detail: String) =
@@ -1175,6 +1187,9 @@ class PropsRepository(
             homeCode = book.displayName.split(" ").first().uppercase().take(4),
             awayCode = "SLIP",
             status = "SCHEDULED",
+            // A slip is filed under the league its markets belong to, so it filters like
+            // every other row instead of sitting in whichever list was rendered first.
+            sport = if (picks.any { Markets.isFootball(it.market) }) Sports.FOOTBALL else Sports.BASKETBALL,
         )
         val quotes = mutableListOf<OddsSnapshotEntity>()
         val predictions = mutableListOf<PredictionEntity>()
@@ -2192,6 +2207,7 @@ private fun SlateRow.toUi(fit: PlattFit = PlattFit.IDENTITY): PropUi {
         },
         explanation = explanation, modelVersion = modelVersion, schemaVersion = schemaVersion,
         featureCutoffUtc = featureCutoffUtc, isFixture = source == FIXTURE_SOURCE,
+        sport = sport,
     )
 }
 

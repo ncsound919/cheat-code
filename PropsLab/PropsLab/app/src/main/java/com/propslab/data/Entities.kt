@@ -24,6 +24,8 @@ data class GameEntity(
     /** Full team names, kept so a fixture-free game can be matched to a box score by name. */
     @ColumnInfo(defaultValue = "") val homeName: String = "",
     @ColumnInfo(defaultValue = "") val awayName: String = "",
+    /** [com.propslab.domain.Sports.BASKETBALL] or [com.propslab.domain.Sports.FOOTBALL]. */
+    @ColumnInfo(defaultValue = "basketball") val sport: String = "basketball",
 )
 
 @Entity(tableName = "players")

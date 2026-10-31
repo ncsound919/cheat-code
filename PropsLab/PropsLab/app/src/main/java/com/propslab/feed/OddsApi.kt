@@ -72,18 +72,23 @@ data class RawGameLine(
 object OddsApi {
 
     const val BASE = "https://api.the-odds-api.com/v4"
-    const val SPORT = "basketball_nba"
+    const val SPORT_NBA = "basketball_nba"
+    const val SPORT_NFL = "americanfootball_nfl"
 
-    fun eventsUrl(apiKey: String): String =
-        "$BASE/sports/$SPORT/events?apiKey=$apiKey&dateFormat=iso"
+    /** The basketball key, kept as the default so every existing caller reads the same feed. */
+    const val SPORT = SPORT_NBA
+
+    fun eventsUrl(apiKey: String, sport: String = SPORT): String =
+        "$BASE/sports/$sport/events?apiKey=$apiKey&dateFormat=iso"
 
     fun eventOddsUrl(
         eventId: String,
         apiKey: String,
         markets: List<String>,
         bookmakers: List<String>,
+        sport: String = SPORT,
     ): String = buildString {
-        append("$BASE/sports/$SPORT/events/$eventId/odds?apiKey=$apiKey")
+        append("$BASE/sports/$sport/events/$eventId/odds?apiKey=$apiKey")
         append("&regions=us&oddsFormat=american&dateFormat=iso")
         append("&markets=").append(markets.joinToString(",") { apiMarket(it) })
         // Bookmakers take priority over regions when both are present, which is exactly
@@ -100,7 +105,9 @@ object OddsApi {
     /** This app's market for one of the provider's keys. Unknown keys return null. */
     fun appMarket(apiKey: String): String? = when (apiKey) {
         "player_points_rebounds_assists" -> Markets.PRA
-        Markets.POINTS, Markets.REBOUNDS, Markets.ASSISTS, Markets.THREES, Markets.PRA -> apiKey
+        Markets.POINTS, Markets.REBOUNDS, Markets.ASSISTS, Markets.THREES, Markets.PRA,
+        Markets.PASS_YARDS, Markets.RUSH_YARDS, Markets.RECEIVING_YARDS, Markets.RECEPTIONS,
+        -> apiKey
         else -> null
     }
 

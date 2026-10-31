@@ -19,6 +19,8 @@ data class UnsettledRow(
     val predictionId: String,
     val market: String,
     val gameId: String,
+    /** The league of the game, so a final is never matched across leagues that share a city. */
+    val sport: String,
     val playerId: String,
     val playerName: String,
     val line: Double,
@@ -33,7 +35,7 @@ interface FeedDao {
 
     @Query(
         "SELECT p.id AS predictionId, p.market AS market, p.gameId AS gameId, p.playerId AS playerId, " +
-            "pl.name AS playerName, o.line AS line, g.startUtc AS startUtc, " +
+            "pl.name AS playerName, o.line AS line, g.startUtc AS startUtc, g.sport AS sport, " +
             "g.homeName AS homeName, g.awayName AS awayName, g.externalId AS externalId " +
             "FROM predictions p " +
             "JOIN odds_snapshots o ON o.id = p.quoteId " +
@@ -160,15 +162,59 @@ interface FeedDao {
     @Query("SELECT COUNT(*) FROM odds_snapshots WHERE source = :source")
     suspend fun countQuotesForSource(source: String): Int
 
+    /**
+     * The same cleanup, limited to one league.
+     *
+     * A real NBA price must retire the invented basketball board without touching the
+     * football slate, and a real NFL price must do the reverse. Deleting every fixture at
+     * once would make one league's key erase the other league's demo rows.
+     */
+    @Query(
+        "SELECT COUNT(*) FROM odds_snapshots o JOIN games g ON g.id = o.gameId " +
+            "WHERE o.source = :source AND g.sport = :sport",
+    )
+    suspend fun countQuotesForSourceInSport(source: String, sport: String): Int
+
+    @Query(
+        "DELETE FROM settlements WHERE betId IN (SELECT b.id FROM paper_bets b " +
+            "JOIN predictions p ON p.id = b.predictionId " +
+            "JOIN odds_snapshots o ON o.id = p.quoteId " +
+            "JOIN games g ON g.id = p.gameId " +
+            "WHERE o.source = :source AND g.sport = :sport)",
+    )
+    suspend fun deleteSettlementsForSourceInSport(source: String, sport: String): Int
+
+    @Query(
+        "DELETE FROM paper_bets WHERE id IN (SELECT b.id FROM paper_bets b " +
+            "JOIN predictions p ON p.id = b.predictionId " +
+            "JOIN odds_snapshots o ON o.id = p.quoteId " +
+            "JOIN games g ON g.id = p.gameId " +
+            "WHERE o.source = :source AND g.sport = :sport)",
+    )
+    suspend fun deleteBetsForSourceInSport(source: String, sport: String): Int
+
+    @Query(
+        "DELETE FROM predictions WHERE quoteId IN (SELECT o.id FROM odds_snapshots o " +
+            "JOIN games g ON g.id = o.gameId WHERE o.source = :source AND g.sport = :sport)",
+    )
+    suspend fun deletePredictionsForSourceInSport(source: String, sport: String): Int
+
+    @Query(
+        "DELETE FROM odds_snapshots WHERE id IN (SELECT o.id FROM odds_snapshots o " +
+            "JOIN games g ON g.id = o.gameId WHERE o.source = :source AND g.sport = :sport)",
+    )
+    suspend fun deleteQuotesForSourceInSport(source: String, sport: String): Int
+
     /** Fixture players are seeded as `p-…`; the odds feed mints `fp-…` ids. */
     @Query("DELETE FROM players WHERE id LIKE 'p-%' AND id NOT IN (SELECT DISTINCT playerId FROM odds_snapshots)")
     suspend fun deleteOrphanFixturePlayers(): Int
 
     @Query(
-        "DELETE FROM games WHERE id IN ('g-past', 'g-hrb-lsv', 'g-ngw-dsf', 'g-smt-blt') " +
-            "AND id NOT IN (SELECT DISTINCT gameId FROM odds_snapshots)",
+        "DELETE FROM games WHERE id IN ('g-past', 'g-hrb-lsv', 'g-ngw-dsf', 'g-smt-blt', " +
+            "'g-nfl-kc-buf', 'g-nfl-sf-dal') " +
+            "AND sport = :sport AND id NOT IN (SELECT DISTINCT gameId FROM odds_snapshots)",
     )
-    suspend fun deleteFixtureGames(): Int
+    suspend fun deleteFixtureGamesForSport(sport: String): Int
 
     /**
      * Game lines joined onto their game, so the board can name the teams the way the

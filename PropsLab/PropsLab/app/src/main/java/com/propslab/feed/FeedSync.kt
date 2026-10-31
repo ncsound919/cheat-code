@@ -31,6 +31,7 @@ import com.propslab.domain.Odds
 import com.propslab.domain.PlattFit
 import com.propslab.domain.PredictionGate
 import com.propslab.domain.RejectReason
+import com.propslab.domain.Sports
 import com.propslab.inference.ChampionTable
 import com.propslab.inference.ExplainInput
 import com.propslab.inference.LocalAssistant
@@ -346,40 +347,57 @@ class FeedSync(
      * game. No key, so this is the lane that makes a fresh install priceable immediately.
      */
     private suspend fun syncEspnResults(config: FeedConfig, now: Long): ResultsStep {
-        // ESPN is free, so the window can be wider than the keyed provider's: a week is
-        // enough for most players to reach the four-game floor early in a season.
-        val days = (0 until config.resultsLookbackDays.coerceIn(1, 10))
-            .map { NbaCalendar.gameDate(now).minusDays(it.toLong()) }
+        // ESPN is free, so the window can be wider than the keyed provider's. Each league
+        // picks its own lookback inside the loop: basketball is nightly, football weekly.
         val gamesByDate = LinkedHashMap<LocalDate, List<ResultGame>>()
+        val finalsBySport = LinkedHashMap<String, List<ResultGame>>()
         var failure: String? = null
 
-        for (day in days) {
-            val response = fetcher.safeGet(EspnApi.scoreboardUrl(day.toString())).getOrNull()
-            if (response == null) {
-                failure = "The network request failed while reading box scores."
-                break
+        for (sport in Sports.ALL) {
+            val read = mutableListOf<ResultGame>()
+            // Football plays once a week, so a two-day window is the one night a week the
+            // results would be in it. The football lane looks back far enough to cover a
+            // full slate; the endpoint is keyless, so the wider window costs requests
+            // rather than credits. Already-read summaries are skipped below.
+            val lookback = if (sport == Sports.FOOTBALL) {
+                config.resultsLookbackDays.coerceIn(1, 10).coerceAtLeast(8)
+            } else {
+                config.resultsLookbackDays.coerceIn(1, 10)
             }
-            if (!response.ok) {
-                failure = "ESPN returned HTTP ${response.status} while reading ${day}."
-                break
+            val sportDays = (0 until lookback).map { NbaCalendar.gameDate(now).minusDays(it.toLong()) }
+            // The football and basketball scoreboards are different endpoints with the same
+            // shape, so one loop reads both and each result keeps the league that produced it.
+            for (day in sportDays) {
+                val response = fetcher.safeGet(EspnApi.scoreboardUrl(day.toString(), sport)).getOrNull()
+                if (response == null) {
+                    failure = "The network request failed while reading ${Sports.label(sport)} box scores."
+                    continue
+                }
+                if (!response.ok) {
+                    failure = "ESPN returned HTTP ${response.status} while reading ${Sports.label(sport)} ${day}."
+                    continue
+                }
+                val games = EspnApi.parseGames(response.body, day.toString(), sport)
+                gamesByDate[day] = (gamesByDate[day].orEmpty() + games).distinctBy { it.id }
+                read += games
             }
-            gamesByDate[day] = EspnApi.parseGames(response.body, day.toString())
+            finalsBySport[sport] = read
         }
         if (gamesByDate.isEmpty()) {
             return ResultsStep(Step(false, failure ?: "ESPN returned no games.", 0), 0, 0)
         }
 
-        val finals = gamesByDate.values.flatten()
-            .filter { it.isFinal }
-            .distinctBy { it.id }
-            .take(config.maxResultGames)
-        attachFinals(finals, now)
+        val finals = finalsBySport.flatMap { (sport, list) ->
+            list.filter { it.isFinal }.distinctBy { it.id }.take(config.maxResultGames)
+                .map { sport to it }
+        }
+        attachFinals(finals.map { it.second }, now)
         var statsWritten = 0
-        for (game in finals) {
+        for ((sport, game) in finals) {
             // A game already read contributes its history to every later sync; re-downloading
             // it would spend a minute of requests to write the same rows again.
             if (db.feedDao().statsForGame(game.id) > 0) continue
-            val response = fetcher.safeGet(EspnApi.summaryUrl(game.id)).getOrNull()
+            val response = fetcher.safeGet(EspnApi.summaryUrl(game.id, sport)).getOrNull()
             if (response == null) {
                 failure = "The network request failed while reading a box score."
                 continue
@@ -388,15 +406,21 @@ class FeedSync(
                 failure = "ESPN returned HTTP ${response.status} for one box score."
                 continue
             }
-            val rows = EspnApi.parseBoxScore(response.body, game.id, now).map { it.toEntity(now) }
+            val rows = if (sport == Sports.FOOTBALL) {
+                EspnApi.parseFootballBoxScore(response.body, game.id, now)
+            } else {
+                EspnApi.parseBoxScore(response.body, game.id, now)
+            }.map { it.toEntity(now) }
             statsWritten += db.feedDao().insertStats(rows).count { it != -1L }
         }
 
         val settled = settleOutstanding(gamesByDate, now)
+        val leagues = finals.map { Sports.label(it.first) }.distinct().joinToString(" and ")
         val step = when {
             failure != null && statsWritten == 0 && settled == 0 -> Step(false, failure, 0)
             failure != null -> Step(true, "$failure $statsWritten box score lines were still read.", statsWritten)
-            else -> Step(true, "${finals.size} finished games read, $statsWritten lines stored, $settled props settled.", statsWritten)
+            finals.isEmpty() -> Step(true, "No finished game in the lookback window.", 0)
+            else -> Step(true, "${finals.size} finished $leagues game(s) read, $statsWritten lines stored, $settled props settled.", statsWritten)
         }
         db.auditDao().insert(
             AuditEventEntity(ts = now, kind = "feed_results", subjectId = "espn", detail = step.note),
@@ -415,8 +439,12 @@ class FeedSync(
         for (game in games) {
             if (!game.externalId.isNullOrBlank()) continue
             if (game.homeName.isBlank() || game.awayName.isBlank()) continue
+            // A city can field two clubs with the same abbreviation (CHI is both the Bulls
+            // and the Bears), so a final is only matched inside its own league.
             val match = finals.firstOrNull {
-                Teams.sameTeam(it.homeName, game.homeName) && Teams.sameTeam(it.awayName, game.awayName)
+                it.sport == game.sport &&
+                    Teams.sameTeam(it.homeName, game.homeName) &&
+                    Teams.sameTeam(it.awayName, game.awayName)
             } ?: continue
             db.feedDao().attachResultGame(game.id, match.id, "FINAL")
         }
@@ -456,7 +484,9 @@ class FeedSync(
         now: Long,
     ): Int {
         // Only games recent enough that a box score would still be on the provider's radar.
-        val open = db.feedDao().unsettled(nowUtc = now, sinceUtc = now - 4 * 86_400_000L)
+        // Eight days covers a weekly football slate as well as a nightly basketball one, so
+        // a phone that was off over the weekend still settles its open rows.
+        val open = db.feedDao().unsettled(nowUtc = now, sinceUtc = now - 8 * 86_400_000L)
         if (open.isEmpty()) return 0
         val rows = mutableListOf<PlayerResultEntity>()
         val attach = mutableListOf<Pair<String, String>>()
@@ -468,8 +498,17 @@ class FeedSync(
                 attach += row.gameId to matched.id
             }
             val stat = db.feedDao().statFor(Names.key(row.playerName), externalId) ?: continue
-            val actual = GameLogModel.statValue(stat.points, stat.rebounds, stat.assists, stat.threes, row.market)
-                ?: continue
+            val actual = GameLogModel.anyStatValue(
+                points = stat.points,
+                rebounds = stat.rebounds,
+                assists = stat.assists,
+                threes = stat.threes,
+                passYards = stat.passYards,
+                rushYards = stat.rushYards,
+                receivingYards = stat.receivingYards,
+                receptions = stat.receptions,
+                market = row.market,
+            ) ?: continue
             rows += PlayerResultEntity(
                 predictionId = row.predictionId,
                 market = row.market,
@@ -492,7 +531,9 @@ class FeedSync(
         val day = NbaCalendar.gameDate(row.startUtc)
         val candidates = gamesByDate[day] ?: gamesByDate[day.plusDays(1)] ?: return null
         return candidates.firstOrNull { game ->
-            Teams.sameTeam(game.homeName, row.homeName) && Teams.sameTeam(game.awayName, row.awayName)
+            game.sport == row.sport &&
+                Teams.sameTeam(game.homeName, row.homeName) &&
+                Teams.sameTeam(game.awayName, row.awayName)
         }
     }
 
@@ -664,6 +705,17 @@ class FeedSync(
         val retired: Boolean? = null,
     )
 
+    /** One league's read: which markets to ask for, and how many games may be paid for. */
+    private data class SportPlan(
+        val sport: String,
+        val markets: List<String>,
+        val maxEvents: Int,
+        val withLines: Boolean,
+    )
+
+    private fun apiSport(sport: String): String =
+        if (sport == Sports.FOOTBALL) OddsApi.SPORT_NFL else OddsApi.SPORT_NBA
+
     private suspend fun syncProps(
         config: FeedConfig,
         now: Long,
@@ -672,62 +724,81 @@ class FeedSync(
     ): PropsStep {
         if (!config.oddsReady) return PropsStep(Step.skipped("No odds key is saved."), null, 0, 0)
 
-        val eventsResponse = fetcher.safeGet(OddsApi.eventsUrl(config.oddsKey)).getOrNull()
-            ?: return PropsStep(Step.skipped("The network request failed."), null, 0, 0)
-        var credits = eventsResponse.header("x-requests-remaining")?.toIntOrNull()
-        if (!eventsResponse.ok) {
-            val message = FeedFailure.of(eventsResponse, "The odds provider").message
-            db.auditDao().insert(AuditEventEntity(ts = now, kind = "feed_props", subjectId = "odds", detail = message))
-            return PropsStep(Step(false, message, 0), credits, 0, 0)
-        }
-
         val horizon = now + config.lookaheadHours.coerceIn(1, 72) * PredictionGate.HOUR_MS
-        val events = OddsApi.parseEvents(eventsResponse.body)
-            .filter { it.commenceUtc > now && it.commenceUtc <= horizon }
-            .sortedBy { it.commenceUtc }
-            .take(config.maxEvents.coerceIn(1, 20))
-        if (events.isEmpty()) {
-            val note = "No games tip off in the next ${config.lookaheadHours} hours."
-            return PropsStep(Step(true, note, 0), credits, 0, 0)
-        }
-
-        val quotes = mutableListOf<RawQuote>()
         // Game markets cost one credit each per game, so they refresh on their own slower
         // clock rather than on every half-hour pass over the props.
         val readGameLines = config.gameLines && now - settings.gameLinesUtc() >= GAME_LINES_REFRESH_MS
-        val wanted = if (readGameLines) config.pricedMarkets() + GameMarkets.ALL else config.pricedMarkets()
+        // Football is capped lower on purpose: each event read costs one credit per market,
+        // so a full NFL slate plus a full NBA slate would spend the month's allowance in a
+        // day. Four football games is enough to know the lane works.
+        val plans = listOf(
+            SportPlan(Sports.BASKETBALL, config.pricedMarkets(), config.maxEvents.coerceIn(1, 20), readGameLines),
+            SportPlan(Sports.FOOTBALL, Markets.FOOTBALL.toList(), config.maxEvents.coerceIn(1, 4), false),
+        )
+
+        val events = mutableListOf<OddsEvent>()
+        val quotes = mutableListOf<RawQuote>()
         val lines = mutableListOf<RawGameLine>()
+        val notesRead = mutableListOf<String>()
+        val quotedSports = LinkedHashSet<String>()
+        var credits: Int? = null
         var failure: String? = null
-        for (event in events) {
-            val url = OddsApi.eventOddsUrl(
-                eventId = event.id,
-                apiKey = config.oddsKey,
-                markets = wanted,
-                bookmakers = config.quotedBookmakers(),
-            )
-            val response = fetcher.safeGet(url).getOrNull()
-            if (response == null) {
-                failure = "The network request failed while reading prices."
+
+        for (plan in plans) {
+            val eventsResponse = fetcher.safeGet(OddsApi.eventsUrl(config.oddsKey, apiSport(plan.sport))).getOrNull()
+            if (eventsResponse == null) {
+                failure = "The network request failed."
                 continue
             }
-            response.header("x-requests-remaining")?.toIntOrNull()?.let { credits = it }
-            if (!response.ok) {
-                failure = FeedFailure.of(response, "The odds provider").message
+            eventsResponse.header("x-requests-remaining")?.toIntOrNull()?.let { credits = it }
+            if (!eventsResponse.ok) {
+                failure = FeedFailure.of(eventsResponse, "The odds provider").message
+                notesRead += "${Sports.label(plan.sport)}: ${failure}"
                 continue
             }
-            quotes += OddsApi.parseEventOdds(response.body, now)
-            if (readGameLines) lines += OddsApi.parseGameLines(response.body, now)
+            val found = OddsApi.parseEvents(eventsResponse.body)
+                .filter { it.commenceUtc > now && it.commenceUtc <= horizon }
+                .sortedBy { it.commenceUtc }
+                .take(plan.maxEvents)
+            if (found.isEmpty()) {
+                notesRead += "no ${Sports.label(plan.sport)} game in the next ${config.lookaheadHours} hours"
+                continue
+            }
+            events += found
+            val wanted = if (plan.withLines) plan.markets + GameMarkets.ALL else plan.markets
+            for (event in found) {
+                val url = OddsApi.eventOddsUrl(
+                    eventId = event.id,
+                    apiKey = config.oddsKey,
+                    markets = wanted,
+                    bookmakers = config.quotedBookmakers(),
+                    sport = apiSport(plan.sport),
+                )
+                val response = fetcher.safeGet(url).getOrNull()
+                if (response == null) {
+                    failure = "The network request failed while reading prices."
+                    continue
+                }
+                response.header("x-requests-remaining")?.toIntOrNull()?.let { credits = it }
+                if (!response.ok) {
+                    failure = FeedFailure.of(response, "The odds provider").message
+                    continue
+                }
+                val read = OddsApi.parseEventOdds(response.body, now)
+                if (read.isNotEmpty()) quotedSports += plan.sport
+                quotes += read
+                if (plan.withLines) lines += OddsApi.parseGameLines(response.body, now)
+            }
         }
+
+        val combinedNote = notesRead.joinToString("; ")
         if (quotes.isEmpty()) {
-            val note = failure ?: "No two-way prop prices came back from the selected books."
+            val note = failure ?: combinedNote.ifBlank { "No two-way prop prices came back from the selected books." }
             db.auditDao().insert(AuditEventEntity(ts = now, kind = "feed_props", subjectId = "odds", detail = note))
             return PropsStep(Step(false, note, 0), credits, 0, 0)
         }
 
         val board = FeedBoard.bestPrices(quotes)
-        // Retiring on the leftover rows rather than on a one-shot flag also heals an install
-        // that already retired the board the old way, under which the synthetic props stayed.
-        val fixtureRows = db.feedDao().countQuotesForSource(FIXTURE_SOURCE)
         // Stored predictions are raw model output. The learned correction is applied where the
         // board is read, so the learning ledger always fits on raw probabilities and a refit
         // never compounds an earlier correction into its own training data.
@@ -741,16 +812,15 @@ class FeedSync(
             db.slateDao().insertPlayers(rows.players)
             db.feedDao().upsertQuotes(rows.quotes)
             db.feedDao().upsertPredictions(rows.predictions)
-            if (fixtureRows > 0 && rows.quotes.isNotEmpty()) {
-                // The demo ledger is built on the demo board. Once the invented board goes, a
-                // ticket that can never settle against a real game and can no longer name its
-                // player is worse than no ticket at all.
-                db.feedDao().deleteSettlementsForSource(FIXTURE_SOURCE)
-                db.feedDao().deleteBetsForSource(FIXTURE_SOURCE)
-                db.feedDao().deletePredictionsForSource(FIXTURE_SOURCE)
-                db.feedDao().deleteQuotesForSource(FIXTURE_SOURCE)
+            // Retire the invented rows of exactly the leagues that just got a real price.
+            for (sport in quotedSports) {
+                if (db.feedDao().countQuotesForSourceInSport(FIXTURE_SOURCE, sport) == 0) continue
+                db.feedDao().deleteSettlementsForSourceInSport(FIXTURE_SOURCE, sport)
+                db.feedDao().deleteBetsForSourceInSport(FIXTURE_SOURCE, sport)
+                db.feedDao().deletePredictionsForSourceInSport(FIXTURE_SOURCE, sport)
+                db.feedDao().deleteQuotesForSourceInSport(FIXTURE_SOURCE, sport)
                 db.feedDao().deleteOrphanFixturePlayers()
-                db.feedDao().deleteFixtureGames()
+                db.feedDao().deleteFixtureGamesForSport(sport)
                 retired = true
             }
             // Heals an install that retired its fixtures before the bets were cleaned up.
@@ -785,11 +855,13 @@ class FeedSync(
 
         val note = buildString {
             append("${rows.quotes.size} two-way prices from ${Bookmakers.titles(config.quotedBookmakers())} ")
-            append("across ${events.size} games, ${rows.scored} priced from box scores.")
+            append("across ${events.size} ${quotedSports.joinToString(" and ") { Sports.label(it) }} games, ")
+            append("${rows.scored} priced from box scores.")
             if (readGameLines && lines.isNotEmpty()) {
                 append(" Moneyline, spread and total refreshed from ${lines.map { it.bookTitle }.distinct().size} book(s).")
             }
-            failure?.let { append(" $it") }
+            if (combinedNote.isNotBlank()) append(" $combinedNote.")
+            failure?.let { if (!combinedNote.contains(it)) append(" $it") }
             if (rows.thin > 0) append(" ${rows.thin} props used fewer than ${GameLogModel.MIN_GAMES} games, so their estimates are pulled toward 50%.")
         }
         db.auditDao().insert(AuditEventEntity(ts = now, kind = "feed_props", subjectId = "odds", detail = note))
@@ -823,6 +895,7 @@ class FeedSync(
 
         for (quote in board) {
             val event = eventById[quote.eventId] ?: continue
+            val sport = Sports.ofMarket(quote.market)
             val gameId = "oa:${event.id}"
             games.getOrPut(gameId) {
                 GameEntity(
@@ -834,18 +907,33 @@ class FeedSync(
                     externalId = null,
                     homeName = event.homeTeam,
                     awayName = event.awayTeam,
+                    sport = sport,
                 )
             }
             val playerId = Names.playerId(quote.playerName)
-            val history = historyCache.getOrPut(quote.playerKey) {
+            // A player key is unique to a person, but the two leagues never share one; the
+            // cache is split by sport anyway so a stray football row can never be read as
+            // basketball history.
+            val history = historyCache.getOrPut("${quote.playerKey}|$sport") {
                 db.feedDao().recentStats(quote.playerKey, GameLogModel.WINDOW)
+                    .filter { it.sport == sport }
             }
             players.getOrPut(playerId) {
                 PlayerEntity(playerId, quote.playerName, history.firstOrNull { it.teamAbbr.isNotBlank() }?.teamAbbr.orEmpty())
             }
 
             val values = history.mapNotNull {
-                GameLogModel.statValue(it.points, it.rebounds, it.assists, it.threes, quote.market)
+                GameLogModel.anyStatValue(
+                    points = it.points,
+                    rebounds = it.rebounds,
+                    assists = it.assists,
+                    threes = it.threes,
+                    passYards = it.passYards,
+                    rushYards = it.rushYards,
+                    receivingYards = it.receivingYards,
+                    receptions = it.receptions,
+                    market = quote.market,
+                )
             }
             val note = notes[quote.playerKey]
             val liveNote = note?.takeIf { it.fresh(now) }
@@ -992,4 +1080,9 @@ private fun BoxScore.toEntity(now: Long) = PlayerGameStatEntity(
     threes = threes,
     minutes = minutes,
     fetchedUtc = now,
+    passYards = passYards,
+    rushYards = rushYards,
+    receivingYards = receivingYards,
+    receptions = receptions,
+    sport = sport,
 )

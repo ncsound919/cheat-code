@@ -19,7 +19,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FantasyLeagueEntity::class, FantasyTeamEntity::class, FantasyRosterEntity::class,
         FantasyWeekEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 abstract class PropsDatabase : RoomDatabase() {
@@ -478,11 +478,29 @@ abstract class PropsDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds football to a database that has only ever held basketball. The sport column
+         * defaults to basketball, which is the truthful reading of every row already there;
+         * the four football stat columns default to zero, and a zero only ever settles a
+         * football market, which those rows cannot carry.
+         */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `games` ADD COLUMN `sport` TEXT NOT NULL DEFAULT 'basketball'")
+                db.execSQL("ALTER TABLE `player_game_stats` ADD COLUMN `passYards` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `player_game_stats` ADD COLUMN `rushYards` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `player_game_stats` ADD COLUMN `receivingYards` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `player_game_stats` ADD COLUMN `receptions` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `player_game_stats` ADD COLUMN `sport` TEXT NOT NULL DEFAULT 'basketball'")
+            }
+        }
+
         fun build(context: Context): PropsDatabase =
             Room.databaseBuilder(context, PropsDatabase::class.java, "propslab.db")
                 .addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
                     MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+                    MIGRATION_11_12,
                 )
                 .build()
     }

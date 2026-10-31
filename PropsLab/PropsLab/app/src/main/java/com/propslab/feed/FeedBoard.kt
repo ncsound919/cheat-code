@@ -1,5 +1,6 @@
 package com.propslab.feed
 
+import com.propslab.domain.Markets
 import com.propslab.domain.Odds
 
 /**
@@ -16,6 +17,19 @@ object FeedBoard {
     const val MIN_LINE = 0.5
     const val MAX_LINE = 80.0
 
+    /**
+     * Football lines are not basketball lines: a passing-yards prop around 250 is ordinary,
+     * and a 250-point basketball prop is a parse artefact. Keeping one band would either
+     * throw away every quarterback or let a broken number through, so the band follows the
+     * market.
+     */
+    fun rangeFor(market: String): ClosedFloatingPointRange<Double> = when (market) {
+        Markets.PASS_YARDS -> 50.0..450.0
+        Markets.RUSH_YARDS, Markets.RECEIVING_YARDS -> 0.5..250.0
+        Markets.RECEPTIONS -> 0.5..15.0
+        else -> MIN_LINE..MAX_LINE
+    }
+
     /** American prices are rejected outside this band; the format has no meaning there. */
     val PRICE_RANGE = -2000..2000
 
@@ -24,7 +38,7 @@ object FeedBoard {
 
     fun acceptable(quote: RawQuote): Boolean {
         if (!quote.line.isFinite()) return false
-        if (quote.line < MIN_LINE || quote.line > MAX_LINE) return false
+        if (quote.line !in rangeFor(quote.market)) return false
         if (quote.overPrice !in PRICE_RANGE || quote.underPrice !in PRICE_RANGE) return false
         val hold = hold(quote.overPrice, quote.underPrice) ?: return false
         return hold <= MAX_HOLD

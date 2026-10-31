@@ -68,6 +68,42 @@ object GameLogModel {
         }
 
     /**
+     * The same reading for a football line. The four columns are separate on purpose:
+     * a quarterback's passing yards say nothing about his rushing yards, and a receiver's
+     * receptions and receiving yards are two different bets on the same game.
+     */
+    fun footballValue(
+        passYards: Int,
+        rushYards: Int,
+        receivingYards: Int,
+        receptions: Int,
+        market: String,
+    ): Double? = when (market) {
+        Markets.PASS_YARDS -> passYards.toDouble()
+        Markets.RUSH_YARDS -> rushYards.toDouble()
+        Markets.RECEIVING_YARDS -> receivingYards.toDouble()
+        Markets.RECEPTIONS -> receptions.toDouble()
+        else -> null
+    }
+
+    /** Dispatches on the market, so a stored box score settles either sport without guessing. */
+    fun anyStatValue(
+        points: Int,
+        rebounds: Int,
+        assists: Int,
+        threes: Int,
+        passYards: Int,
+        rushYards: Int,
+        receivingYards: Int,
+        receptions: Int,
+        market: String,
+    ): Double? = if (Markets.isFootball(market)) {
+        footballValue(passYards, rushYards, receivingYards, receptions, market)
+    } else {
+        statValue(points, rebounds, assists, threes, market)
+    }
+
+    /**
      * @param values the player's stats, newest first. Order does not change the answer; it
      *   is only used to cut the list to [WINDOW].
      * @param availability a multiplier on the *expectation*, from a late availability

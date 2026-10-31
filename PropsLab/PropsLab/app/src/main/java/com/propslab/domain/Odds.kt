@@ -87,7 +87,21 @@ object Markets {
     const val THREES = "player_threes"
     const val PRA = "player_pra"
 
-    val VALIDATED: Set<String> = setOf(POINTS, REBOUNDS, ASSISTS, THREES, PRA)
+    const val PASS_YARDS = "player_pass_yds"
+    const val RUSH_YARDS = "player_rush_yds"
+    const val RECEIVING_YARDS = "player_reception_yds"
+    const val RECEPTIONS = "player_receptions"
+
+    val BASKETBALL: Set<String> = setOf(POINTS, REBOUNDS, ASSISTS, THREES, PRA)
+
+    /**
+     * Football props are a single box-score column each, exactly like the basketball ones.
+     * Anytime touchdown is deliberately absent: it is a count of a scoring event, not a
+     * column of the same line, so it would be priced by a different model than the one here.
+     */
+    val FOOTBALL: Set<String> = setOf(PASS_YARDS, RUSH_YARDS, RECEIVING_YARDS, RECEPTIONS)
+
+    val VALIDATED: Set<String> = BASKETBALL + FOOTBALL
 
     /** How the market is written on screen. Unknown keys are shown as they arrived. */
     fun label(market: String): String = when (market) {
@@ -96,8 +110,23 @@ object Markets {
         ASSISTS -> "Assists"
         THREES -> "Threes"
         PRA -> "PRA"
+        PASS_YARDS -> "Passing yards"
+        RUSH_YARDS -> "Rushing yards"
+        RECEIVING_YARDS -> "Receiving yards"
+        RECEPTIONS -> "Receptions"
         else -> market
     }
+
+    /** The short form a card has room for. */
+    fun short(market: String): String = when (market) {
+        PASS_YARDS -> "Pass yds"
+        RUSH_YARDS -> "Rush yds"
+        RECEIVING_YARDS -> "Rec yds"
+        RECEPTIONS -> "Rec"
+        else -> label(market)
+    }
+
+    fun isFootball(market: String): Boolean = market in FOOTBALL
 }
 
 object PredictionGate {

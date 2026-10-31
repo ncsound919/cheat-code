@@ -13,6 +13,8 @@ data class ResultGame(
     val awayName: String,
     val homeAbbr: String,
     val awayAbbr: String,
+    /** The league that published this game, so a basketball final can never attach to a football row. */
+    val sport: String = com.propslab.domain.Sports.BASKETBALL,
 ) {
     val isFinal: Boolean get() = state == "final"
 }
@@ -32,6 +34,13 @@ data class BoxScore(
     val minutes: Int,
     /** ESPN's athlete id when the row came from ESPN; empty for other providers. */
     val athleteId: String = "",
+    /** Football columns. A basketball row leaves them at zero. */
+    val passYards: Int = 0,
+    val rushYards: Int = 0,
+    val receivingYards: Int = 0,
+    val receptions: Int = 0,
+    /** Which league the line came from, so a settlement never reads the wrong columns. */
+    val sport: String = com.propslab.domain.Sports.BASKETBALL,
 )
 
 /**

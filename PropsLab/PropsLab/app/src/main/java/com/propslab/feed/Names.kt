@@ -36,6 +36,10 @@ object Names {
  * The odds feed only gives full team names. The results feed gives both, but a game has to
  * be drawn on the board before anyone has played it. A fixed table is smaller and more
  * truthful than a rule that turns "Los Angeles Lakers" into "LOS".
+ *
+ * Football names resolve through the same club table the bet slip draws its marks from, so
+ * "Kansas City Chiefs" becomes KC on the board and on the slip, and a full name from one
+ * provider can be matched to a code from another.
  */
 object Teams {
 
@@ -51,12 +55,25 @@ object Teams {
         "phoenix suns" to "PHX", "portland trail blazers" to "POR", "sacramento kings" to "SAC",
         "san antonio spurs" to "SAS", "toronto raptors" to "TOR", "utah jazz" to "UTA",
         "washington wizards" to "WAS",
+        // The 32 NFL clubs, spelled the way ESPN's scoreboard spells them.
+        "arizona cardinals" to "ARI", "atlanta falcons" to "ATL", "baltimore ravens" to "BAL",
+        "buffalo bills" to "BUF", "carolina panthers" to "CAR", "chicago bears" to "CHI",
+        "cincinnati bengals" to "CIN", "cleveland browns" to "CLE", "dallas cowboys" to "DAL",
+        "denver broncos" to "DEN", "detroit lions" to "DET", "green bay packers" to "GB",
+        "houston texans" to "HOU", "indianapolis colts" to "IND", "jacksonville jaguars" to "JAX",
+        "kansas city chiefs" to "KC", "las vegas raiders" to "LV", "los angeles chargers" to "LAC",
+        "los angeles rams" to "LAR", "miami dolphins" to "MIA", "minnesota vikings" to "MIN",
+        "new england patriots" to "NE", "new orleans saints" to "NO", "new york giants" to "NYG",
+        "new york jets" to "NYJ", "philadelphia eagles" to "PHI", "pittsburgh steelers" to "PIT",
+        "san francisco 49ers" to "SF", "seattle seahawks" to "SEA", "tampa bay buccaneers" to "TB",
+        "tennessee titans" to "TEN", "washington commanders" to "WAS",
     )
 
     fun abbreviation(fullName: String): String =
         ABBREVIATIONS[Names.key(fullName)]
+            ?: com.propslab.fantasy.ProTeams.code(fullName.lowercase(Locale.ROOT))
             ?: fullName.split(' ').filter { it.isNotBlank() }
-                .joinToString("") { it.first().uppercase() }.take(4).ifEmpty { "NBA" }
+                .joinToString("") { it.first().uppercase() }.take(4).ifEmpty { "TEAM" }
 
     /** True when the two names are the same club, however each provider spells it. */
     fun sameTeam(a: String, b: String): Boolean {

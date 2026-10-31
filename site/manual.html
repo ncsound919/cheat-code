@@ -61,7 +61,7 @@
     <circle cx="336" cy="206" r="13" fill="#6fd3a0"/>
   </svg>
   <span class="name">Cheat Code</span>
-  <span class="tag">Offline manual · v1.1.2</span>
+  <span class="tag">Offline manual · v1.1.3</span>
 </header>
 
 <h1>Everything, without the app explaining itself.</h1>
@@ -90,7 +90,7 @@
 </div>
 
 <h2 id="start">1. Start here</h2>
-<p>Cheat Code is a <strong>paper-trading lab for NBA player props</strong>. It reads a board of prices, prices the same board with its own models, and logs every decision so it can check itself later. It never places a wager and cannot connect to a sportsbook account.</p>
+<p>Cheat Code is a <strong>paper-trading lab for NBA and NFL player props</strong>. It reads a board of prices, prices the same board with its own models, and logs every decision so it can check itself later. It never places a wager and cannot connect to a sportsbook account.</p>
 <p>Three rules explain almost everything the app does:</p>
 <ul>
   <li><strong>One number, one owner.</strong> The books own the prices. The model owns the chance. Neither overwrites the other, and the gap between them is what gets bet.</li>
@@ -115,11 +115,13 @@
 <figure><img src="img/01-today.png" alt="Today screen"><figcaption>Today: the board, the game markets, and the model's lean on every priced row.</figcaption></figure>
 <h3>What you are looking at</h3>
 <ul>
+  <li><strong>League chips</strong> — All, NBA or NFL. The count is games, not props, so a league with no game today still appears instead of looking unsupported.</li>
   <li><strong>Board at a glance</strong> — how many estimates lean over and under, the single biggest model-versus-book gap, and the average book cut (hold).</li>
   <li><strong>Game lines</strong> — moneyline, spread and total, each with the book's price and no-vig chance plus the model's chance and gap in points. A game is scored only when both teams have enough box scores.</li>
   <li><strong>Prop rows</strong> — one player, one market, one line. The bar splits over / push / under, with a chalk tick at the market's own price. The distance between the tick and the end of the aqua bar is the edge.</li>
 </ul>
 <p>Sort by <strong>Game order</strong> to follow the slate, or <strong>Biggest edge</strong> to see where the model most disagrees with the market. Tapping a row opens the full explanation: both prices, the no-vig probability, the push mass and the flags.</p>
+<p>Football rows use their own four markets — passing yards, rushing yards, receiving yards and receptions — priced by the same normal model on the player's own game log. A quarterback can carry two rows in the same game (passing and rushing); each is a separate bet with its own line. The football fixtures ship with real clubs and players on invented lines, and the board says so.</p>
 
 <h2 id="best">4. Best bets</h2>
 <figure><img src="img/02-best.png" alt="Best bets screen"><figcaption>Best: what the promoted formula would take, and the game markets that compete with it.</figcaption></figure>
@@ -270,7 +272,7 @@
 <p>Club marks for all 30 NBA and 32 NFL clubs ship with the build, so no logo lookup or import is needed for a team. A player without a known headshot keeps his initials and his club mark rather than borrowing someone else's photo. A moved line is the app's own repricing, not a price a book quoted; the book's number may differ. The slip is analysis, not a placed wager; prices move, and every leg should be checked in the book.</p>
 
 <footer>
-  Cheat Code is not affiliated with the NBA or any sportsbook. Fonts: Bricolage Grotesque and Manrope, SIL OFL. Math X prompt text: MIT. <br>
+  Cheat Code is not affiliated with the NBA, the NFL or any sportsbook. Fonts: Bricolage Grotesque and Manrope, SIL OFL. Math X prompt text: MIT. <br>
   Source, releases and issues: github.com/propslab/propslab · tap4500@gmail.com
 </footer>
 

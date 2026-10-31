@@ -15,6 +15,8 @@ data class SlateRow(
     val homeCode: String,
     val awayCode: String,
     val startUtc: Long,
+    /** `basketball` or `football`, read from the game so the board can be split by league. */
+    val sport: String,
     val market: String,
     val book: String,
     val line: Double?,
@@ -69,7 +71,7 @@ data class BetRow(
 
 private const val SLATE_SELECT = """
 SELECT p.id AS predictionId, pl.id AS playerId, pl.name AS playerName, pl.teamCode AS teamCode,
-  g.id AS gameId, g.homeCode AS homeCode, g.awayCode AS awayCode, g.startUtc AS startUtc,
+  g.id AS gameId, g.homeCode AS homeCode, g.awayCode AS awayCode, g.startUtc AS startUtc, g.sport AS sport,
   p.market AS market, o.book AS book, o.line AS line, o.overOdds AS overOdds, o.underOdds AS underOdds,
   o.quoteTimeUtc AS quoteTimeUtc, o.source AS source,
   p.modelVersion AS modelVersion, p.featureSchemaVersion AS schemaVersion, p.featureCutoffUtc AS featureCutoffUtc,
@@ -94,6 +96,10 @@ interface SlateDao {
 
     @Query("SELECT COUNT(*) FROM predictions")
     suspend fun predictionCount(): Int
+
+    /** Counts only one league, so a new league can be topped up on an existing install. */
+    @Query("SELECT COUNT(*) FROM predictions p JOIN games g ON g.id = p.gameId WHERE g.sport = :sport")
+    suspend fun predictionCountForSport(sport: String): Int
 
     @Query("SELECT COUNT(*) FROM predictions WHERE id = :id")
     suspend fun predictionExists(id: String): Int

@@ -219,7 +219,7 @@ fun UpdatesScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Not affiliated with the NBA or any sportsbook. Problem gambling helpline: 1-800-522-4700.",
+                    "Not affiliated with the NBA, the NFL or any sportsbook. Problem gambling helpline: 1-800-522-4700.",
                     style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
                 )
             }

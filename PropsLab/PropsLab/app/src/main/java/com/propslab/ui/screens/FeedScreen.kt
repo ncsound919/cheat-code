@@ -317,7 +317,7 @@ fun FeedScreen(onBack: () -> Unit) {
                     Text("Odds provider", style = MaterialTheme.typography.titleSmall, color = Palette.Chalk)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Player prop prices for NBA games." +
+                        "Player prop prices for NBA and NFL games." +
                             (feed?.creditsRemaining?.let { " $it credits remain." } ?: ""),
                         style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
                     )

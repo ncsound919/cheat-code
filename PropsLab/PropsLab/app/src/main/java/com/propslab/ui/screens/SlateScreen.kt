@@ -37,6 +37,7 @@ import com.propslab.data.PropUi
 import com.propslab.data.PropsRepository
 import com.propslab.domain.Pricing
 import com.propslab.domain.Side
+import com.propslab.domain.Sports
 import com.propslab.feed.GameMarkets
 import com.propslab.settings.AppSettings
 import com.propslab.ui.components.ChoiceChip
@@ -94,7 +95,9 @@ data class SlateState(
 class SlateViewModel(repo: PropsRepository) : ViewModel() {
     val state: StateFlow<SlateState> = combine(repo.slate(), repo.gameLines()) { props, lines ->
         SlateState(
-            games = props.groupBy { it.gameId }.map { (id, ps) -> GameGroup(id, ps.first().matchup, ps.first().startUtc, ps) },
+            games = props.groupBy { it.gameId }.map { (id, ps) ->
+                GameGroup(id, ps.first().matchup, ps.first().startUtc, ps, ps.first().sport)
+            },
             lines = lines.associateBy { it.gameId },
             loaded = true,
         )
@@ -107,15 +110,23 @@ fun SlateScreen(onOpen: (String) -> Unit, onOpenPlain: () -> Unit) {
     val vm: SlateViewModel = viewModel(factory = viewModelFactory { initializer { SlateViewModel(repo) } })
     val state by vm.state.collectAsStateWithLifecycle()
     var byEdge by rememberSaveable { mutableStateOf(false) }
-    val games = remember(state.games, byEdge) { ordered(state.games, byEdge) }
+    // Null is the whole board. The filter is saved across rotation so the league a reader
+    // picked survives a re-render.
+    var league by rememberSaveable { mutableStateOf<String?>(null) }
+    val games = remember(state.games, byEdge, league) {
+        ordered(state.games.filter { league == null || it.sport == league }, byEdge)
+    }
     val easy = AppSettings.current.easyMode
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = WindowInsets.statusBars.asPaddingValues().let {
         PaddingValues(top = it.calculateTopPadding() + 12.dp, bottom = 120.dp)
     }) {
-        item { SlateHeader(state, byEdge, easy, { byEdge = it }, onOpenPlain) }
+        item { SlateHeader(state, league, { league = it }, byEdge, easy, { byEdge = it }, onOpenPlain) }
         if (state.loaded && state.total == 0) {
             item { EmptySlate() }
+        }
+        if (state.loaded && state.total > 0 && games.isEmpty()) {
+            item { EmptyLeague(league) }
         }
         games.forEach { game ->
             item(key = "game-${game.id}") { GameHeader(game) }
@@ -141,6 +152,8 @@ private fun ordered(games: List<GameGroup>, byEdge: Boolean): List<GameGroup> {
 @Composable
 private fun SlateHeader(
     state: SlateState,
+    league: String?,
+    onLeague: (String?) -> Unit,
     byEdge: Boolean,
     easy: Boolean,
     onOrder: (Boolean) -> Unit,
@@ -165,6 +178,26 @@ private fun SlateHeader(
                 Text(
                     "Props from $it; game markets from game-form-v1. Inputs schema 1.",
                     style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
+                )
+            }
+        }
+        if (state.total > 0) {
+            Spacer(Modifier.height(12.dp))
+            // The board holds two leagues, so it says so. Counts are games, not props, so a
+            // league with a quiet slate still shows up instead of looking unsupported.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ChoiceChip("All", selected = league == null, onClick = { onLeague(null) })
+                Spacer(Modifier.width(8.dp))
+                ChoiceChip(
+                    "${Sports.label(Sports.BASKETBALL)} ${state.games.count { it.sport == Sports.BASKETBALL }}",
+                    selected = league == Sports.BASKETBALL,
+                    onClick = { onLeague(Sports.BASKETBALL) },
+                )
+                Spacer(Modifier.width(8.dp))
+                ChoiceChip(
+                    "${Sports.label(Sports.FOOTBALL)} ${state.games.count { it.sport == Sports.FOOTBALL }}",
+                    selected = league == Sports.FOOTBALL,
+                    onClick = { onLeague(Sports.FOOTBALL) },
                 )
             }
         }
@@ -284,6 +317,25 @@ private fun EmptySlate() {
 }
 
 @Composable
+private fun EmptyLeague(league: String?) {
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 28.dp)
+            .clip(shape).border(1.dp, Palette.Hairline, shape).padding(20.dp),
+    ) {
+        Text(
+            "No ${Sports.label(league ?: Sports.BASKETBALL)} props today",
+            style = MaterialTheme.typography.titleLarge, color = Palette.Chalk,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Switch back to All to see the other league. A league with no game scheduled has nothing to price, and this screen does not invent one.",
+            style = MaterialTheme.typography.bodyMedium, color = Palette.Dust,
+        )
+    }
+}
+
+@Composable
 private fun LegendDot(color: androidx.compose.ui.graphics.Color, label: String) {
     Box(Modifier.size(8.dp).background(color, androidx.compose.foundation.shape.CircleShape))
     Spacer(Modifier.width(6.dp))
@@ -302,7 +354,7 @@ private fun GameHeader(game: GameGroup) {
             style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
         )
         Spacer(Modifier.width(10.dp))
-        Text(fmtTime(game.startUtc), style = MaterialTheme.typography.labelLarge, color = Palette.Dust)
+        Text("${game.league} · ${fmtTime(game.startUtc)}", style = MaterialTheme.typography.labelLarge, color = Palette.Dust)
     }
 }
 

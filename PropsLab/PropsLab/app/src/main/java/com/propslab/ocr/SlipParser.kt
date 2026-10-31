@@ -48,6 +48,18 @@ object SlipParser {
     )
 
     private val MARKETS = listOf(
+        // Football first: "receiving yards" must not be read as the basketball "yards"-free
+        // default, and the longer phrases have to win before any short needle matches.
+        Triple("passing yards", "player_pass_yds", "Passing yards"),
+        Triple("pass yards", "player_pass_yds", "Passing yards"),
+        Triple("pass yds", "player_pass_yds", "Passing yards"),
+        Triple("rushing yards", "player_rush_yds", "Rushing yards"),
+        Triple("rush yards", "player_rush_yds", "Rushing yards"),
+        Triple("rush yds", "player_rush_yds", "Rushing yards"),
+        Triple("receiving yards", "player_reception_yds", "Receiving yards"),
+        Triple("rec yards", "player_reception_yds", "Receiving yards"),
+        Triple("rec yds", "player_reception_yds", "Receiving yards"),
+        Triple("receptions", "player_receptions", "Receptions"),
         Triple("pra", "player_pra", "PRA"),
         Triple("points+rebounds+assists", "player_pra", "PRA"),
         Triple("pts+reb+ast", "player_pra", "PRA"),
@@ -120,7 +132,10 @@ object SlipParser {
             start = short.range.first
             end = short.range.last + 1
         }
-        if (number <= 0.0 || number >= 200.0) return null
+        // Basketball lines live under 200, but a passing-yards prop is routinely 250-350,
+        // so the ceiling has to cover football. The side word is still required, which is
+        // what keeps a stray season or score out of the parse.
+        if (number <= 0.0 || number >= 600.0) return null
 
         // The price can sit before or after the pick. Take the last plausible one on the line.
         val odds = ODDS.findAll(line).mapNotNull { it.groupValues[1].toIntOrNull() }

@@ -34,12 +34,23 @@ data class PropUi(
     val schemaVersion: Int,
     val featureCutoffUtc: Long,
     val isFixture: Boolean,
+    /** The league this prop belongs to: `basketball` or `football`. */
+    val sport: String = com.propslab.domain.Sports.BASKETBALL,
 ) {
     val available: Boolean get() = probabilities != null && line != null && overOdds != null && underOdds != null
     val lean: Side? get() = edgePts?.let { if (it >= 0) Side.OVER else Side.UNDER }
 }
 
-data class GameGroup(val id: String, val matchup: String, val startUtc: Long, val props: List<PropUi>)
+data class GameGroup(
+    val id: String,
+    val matchup: String,
+    val startUtc: Long,
+    val props: List<PropUi>,
+    val sport: String = com.propslab.domain.Sports.BASKETBALL,
+) {
+    /** The league label the card prints above the matchup. */
+    val league: String get() = com.propslab.domain.Sports.label(sport)
+}
 
 data class BetUi(
     val id: String,

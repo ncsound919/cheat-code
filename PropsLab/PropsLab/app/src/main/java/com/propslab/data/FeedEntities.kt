@@ -42,6 +42,12 @@ data class PlayerGameStatEntity(
     val threes: Int,
     val minutes: Int,
     val fetchedUtc: Long,
+    /** The four football columns; zero on a basketball row and on rows written before 1.1.3. */
+    @ColumnInfo(defaultValue = "0") val passYards: Int = 0,
+    @ColumnInfo(defaultValue = "0") val rushYards: Int = 0,
+    @ColumnInfo(defaultValue = "0") val receivingYards: Int = 0,
+    @ColumnInfo(defaultValue = "0") val receptions: Int = 0,
+    @ColumnInfo(defaultValue = "basketball") val sport: String = "basketball",
 )
 
 /**
