@@ -1,10 +1,10 @@
 {
-  "version": "1.1.3",
-  "name": "Cheat Code 1.1.3",
-  "published": "2026-10-30",
+  "version": "1.2.0",
+  "name": "Cheat Code 1.2.0",
+  "published": "2026-11-02",
   "apk": "cheat-code.apk",
   "page": "https://propslab.vercel.app/download.html",
-  "size": 27649876,
-  "sha256": "0c2716d0f6eaa684892c40a4610c6897fbd478c01987c6368df70033532e74b8",
-  "notes": "Signed release, arm64 only, Android 10 or newer. Adds the NFL board: All/NBA/NFL filters on Today, four football markets (passing, rushing and receiving yards, receptions), real NFL fixtures, live prices, ESPN box scores and settlement, and football lines in the slip importer. Paper bets only; no account required."
+  "size": 27717276,
+  "sha256": "c3354e03c2d3d2752ee1f049fae609ea242882d9012d4701988e15c2b0413c0b",
+  "notes": "Signed release, arm64 only, Android 10 or newer. Adds the bet simulator upgrade: Place Bet buttons on Today and Best, a PrizePicks-style entry builder in Bets, streak/form/milestone gamification, and self-learning from your own record — your settled paper bets feed the same segment analysis as the system, and any rule they imply can be tested as a formula on a fresh simulated season. Paper bets only; no account required."
 }

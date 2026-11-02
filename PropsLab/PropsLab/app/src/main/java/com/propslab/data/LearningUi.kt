@@ -1,6 +1,7 @@
 package com.propslab.data
 
 import com.propslab.sim.InsightKind
+import com.propslab.sim.StrategyParams
 
 /** The correction currently applied to one model. */
 data class CalibrationUi(
@@ -82,5 +83,30 @@ data class LearningReport(
     val logged: Int = 0,
     val settled: Int = 0,
     val refit: Int = 0,
+    val note: String = "",
+)
+
+/**
+ * What the user's own settled paper bets teach, separate from the system's losing
+ * record. The same descriptive analysis runs over the user's picks only, so a finding
+ * here is about the bettor's own habits — which side, market or price band they keep
+ * taking — and each rule it implies can be filed as a testable strategy.
+ */
+data class UserFindingUi(
+    val id: String,
+    val kind: InsightKind,
+    val title: String,
+    val detail: String,
+    val advice: String,
+    val proposal: StrategyParams?,
+    val proposalLabel: String?,
+    /** What the sandbox did with the candidate, or null when the finding implies none. */
+    val status: String?,
+)
+
+/** The user's own record through the same lens the system uses on itself. */
+data class UserInsightsUi(
+    val findings: List<UserFindingUi> = emptyList(),
+    val considered: Int = 0,
     val note: String = "",
 )

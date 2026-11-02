@@ -18,8 +18,24 @@ android {
         applicationId = "com.propslab"
         minSdk = 29
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.1.3"
+        versionCode = 6
+        versionName = "1.2.0"
+
+        // Tondo research assist. Empty by default: the console keeps saying it
+        // has no answer rather than sending the question anywhere.
+        val tondoUrl = System.getenv("TONDO_RESEARCH_URL") ?: ""
+        val tondoKey = System.getenv("TONDO_RESEARCH_KEY") ?: ""
+        buildConfigField(
+            "String",
+            "TONDO_RESEARCH_URL",
+            "\"${tondoUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"",
+        )
+        buildConfigField(
+            "String",
+            "TONDO_RESEARCH_KEY",
+            "\"${tondoKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"",
+        )
+
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
@@ -70,7 +86,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }

@@ -824,7 +824,17 @@ private fun FormulaCard(report: FormulaReport) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        Text(report.spec.statement, style = MaterialTheme.typography.bodyMedium, color = Palette.Dust)
+        if (report.spec.plain.isNotBlank()) {
+            Text("IN PLAIN ENGLISH", style = MaterialTheme.typography.labelSmall, color = Palette.Gain)
+            Spacer(Modifier.height(4.dp))
+            Text(report.spec.plain, style = MaterialTheme.typography.bodyMedium, color = Palette.Chalk)
+            if (report.spec.tryThis.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(report.spec.tryThis, style = MaterialTheme.typography.bodySmall, color = Palette.Dust)
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+        Text(report.spec.statement, style = MaterialTheme.typography.bodySmall, color = Palette.Faint)
         Spacer(Modifier.height(12.dp))
         Text(
             if (showMath) "Hide the math" else "Show the math",

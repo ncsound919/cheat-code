@@ -1,5 +1,7 @@
 package com.propslab.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -123,6 +125,36 @@ fun ModelShopScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
 
         item {
             DeviceCard(profile)
+            Spacer(Modifier.height(10.dp))
+        }
+
+        item {
+            TopPickCard(
+                profile = profile,
+                downloading = downloading,
+                onAutoInstall = { repo, file ->
+                    downloading = file.name
+                    progress = 0f
+                    message = null
+                    scope.launch {
+                        val result = ModelHub.download(file, root) { done, total ->
+                            progress = if (total > 0) (done.toFloat() / total.toFloat()).coerceIn(0f, 1f) else 0f
+                        }
+                        downloading = null
+                        result.onSuccess { stored ->
+                            ModelHub.setActive(root, stored.name)
+                            (app.mathModel as? LlamaCppModel)?.unload()
+                            refresh()
+                            selected = repo
+                            files = ModelHub.files(repo.repo)
+                            message = "${stored.name} downloaded and set as the active model."
+                        }.onFailure { failure ->
+                            message = failure.message ?: "The download failed."
+                        }
+                    }
+                },
+                onMessage = { message = it },
+            )
             Spacer(Modifier.height(10.dp))
         }
 
@@ -325,6 +357,85 @@ fun ModelShopScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
             )
         }
+    }
+}
+
+@Composable
+private fun TopPickCard(
+    profile: DeviceProfile?,
+    downloading: String?,
+    onAutoInstall: (CuratedModel, HubFile) -> Unit,
+    onMessage: (String) -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var autoFile by remember { mutableStateOf<HubFile?>(null) }
+    var autoBusy by remember { mutableStateOf(false) }
+    val top = profile?.let { ModelHub.recommendedFor(it.totalRamGb) }
+    Panel(tone = Palette.Court) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("TOP PICK FOR THIS PHONE", style = MaterialTheme.typography.labelSmall, color = Palette.Faint, modifier = Modifier.weight(1f))
+            Badge("AUTO", Palette.Over, filled = true)
+        }
+        Spacer(Modifier.height(8.dp))
+        if (profile == null || top == null) {
+            Text("Measuring this phone…", style = MaterialTheme.typography.bodySmall, color = Palette.Dust)
+            return@Panel
+        }
+        Text(top.label, style = MaterialTheme.typography.titleMedium, color = Palette.Chalk)
+        Spacer(Modifier.height(2.dp))
+        Text(top.repo, style = MaterialTheme.typography.bodySmall, color = Palette.Faint)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Picked because this phone has ${"%.1f".format(profile.totalRamGb)} GB RAM " +
+                "and ${"%.1f".format(profile.freeStorageGb)} GB free: the ${top.params} size " +
+                "in ${profile.recommendedQuant} fits the %.1f GB budget with room left for the system.".format(profile.modelBudgetBytes / 1e9),
+            style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
+        )
+        if (autoFile != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "File: ${autoFile?.name} · ${autoFile?.sizeLabel} · ${autoFile?.quant}",
+                style = MaterialTheme.typography.labelSmall, color = Palette.Chalk,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActionButton(
+                if (autoBusy) "Finding the file…" else "Download & install",
+                enabled = downloading == null && !autoBusy,
+                tone = Palette.Gain,
+                onClick = {
+                    autoBusy = true
+                    scope.launch {
+                        val list = ModelHub.files(top.repo)
+                        val pick = ModelHub.autoFile(list, profile.modelBudgetBytes)
+                        autoBusy = false
+                        if (pick == null) {
+                            onMessage("This repository publishes no GGUF file right now. Try the list below or the web link.")
+                        } else {
+                            autoFile = pick
+                            onAutoInstall(top, pick)
+                        }
+                    }
+                },
+            )
+            ActionButton(
+                "Hugging Face page",
+                tone = Palette.Dust,
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(ModelHub.pageUrl(top.repo)))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    runCatching { context.startActivity(intent) }
+                },
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Direct link: ${ModelHub.pageUrl(top.repo)} · Tap Download to fetch the best-fitting " +
+                "${profile.recommendedQuant} file straight from Hugging Face and set it active. No account, no token.",
+            style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
+        )
     }
 }
 

@@ -21,6 +21,8 @@ import com.propslab.work.FeedWorker
 import com.propslab.work.FreshnessWorker
 import com.propslab.work.LearningWorker
 import com.propslab.work.SandboxWorker
+import com.propslab.ecosystem.TondoResearchClient
+import com.propslab.ecosystem.TondoResearchConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -83,7 +85,18 @@ class PropsLabApp : Application() {
         // the same registry the console routes into, so the two can never drift apart.
         val tools = AgentTools.create(repository, repository)
         agentToolsRef = tools
-        consoleRef = ConsoleEngine(tools, RoomTranscript(database.consoleDao()), DeviceAssistant(model))
+        consoleRef = ConsoleEngine(
+            tools,
+            RoomTranscript(database.consoleDao()),
+            DeviceAssistant(model),
+            research = TondoResearchClient(
+                TondoResearchConfig(
+                    baseUrl = BuildConfig.TONDO_RESEARCH_URL,
+                    appId = "propslab",
+                    token = BuildConfig.TONDO_RESEARCH_KEY,
+                )
+            ),
+        )
         appScope.launch {
             repo.seedFixturesIfEmpty()
             // The app does its own first pass: sync, first formula round, learning update.

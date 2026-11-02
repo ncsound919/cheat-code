@@ -47,12 +47,17 @@ import com.propslab.data.CalibrationUi
 import com.propslab.data.FormulaRecord
 import com.propslab.data.FormulaUi
 import com.propslab.data.LearningUi
+import com.propslab.data.PracticeLedger.Milestone
 import com.propslab.data.PlaceResult
 import com.propslab.data.PracticeLedger
+import com.propslab.data.UserFindingUi
+import com.propslab.data.UserInsightsUi
 import com.propslab.data.PropsRepository
 import com.propslab.domain.Calibration
 import com.propslab.domain.Outcome
 import com.propslab.domain.Side
+import com.propslab.sim.InsightKind
+import com.propslab.sim.StrategyParams
 import com.propslab.ui.components.ActionButton
 import com.propslab.ui.components.Badge
 import com.propslab.ui.components.BookMark
@@ -93,6 +98,7 @@ data class PortfolioState(
     val formulaRecords: List<FormulaRecord> = emptyList(),
     val learning: LearningUi = LearningUi(),
     val promotedLabel: String? = null,
+    val userInsights: UserInsightsUi = UserInsightsUi(),
 ) {
     val profit: Double get() = settled.sumOf { it.profit ?: 0.0 }
     val staked: Double get() = settled.sumOf { it.stake }
@@ -123,7 +129,7 @@ class PortfolioViewModel(private val repo: PropsRepository) : ViewModel() {
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
     val state: StateFlow<PortfolioState> =
-        combine(repo.bets(), repo.sandbox(), repo.learning(), repo.bestBets()) { bets, sandbox, learning, best ->
+        combine(repo.bets(), repo.sandbox(), repo.learning(), repo.bestBets(), repo.userInsights()) { bets, sandbox, learning, best, insights ->
             PortfolioState(
                 open = bets.filter { it.isOpen }.sortedBy { it.decidedUtc },
                 settled = bets.filter { !it.isOpen }.sortedByDescending { it.settledUtc },
@@ -132,6 +138,7 @@ class PortfolioViewModel(private val repo: PropsRepository) : ViewModel() {
                 formulaRecords = PracticeLedger.records(bets, sandbox.trades, sandbox.formulas),
                 learning = learning,
                 promotedLabel = sandbox.promotedLabel,
+                userInsights = insights,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PortfolioState())
 
@@ -153,6 +160,44 @@ class PortfolioViewModel(private val repo: PropsRepository) : ViewModel() {
                     "Only ${"%.2f".format(result.available)} practice units are available, so no bet was recorded."
             }
             _messages.emit(message)
+        }
+    }
+
+    /**
+     * Places a whole entry: one paper bet per leg at the same stake, all tagged to the
+     * entry, so the slip reads as one slip and the record reads as one group.
+     */
+    fun placeEntry(legs: List<PropsRepository.EntryLeg>, stake: Double) {
+        viewModelScope.launch {
+            val label = "Entry · ${legs.size} legs"
+            val result = repo.placeEntry(legs, stake, label)
+            _messages.emit(
+                when {
+                    result.placed == 0 ->
+                        "No legs could be placed. ${result.skipped.firstOrNull() ?: "Nothing was written."}"
+                    result.skipped.isEmpty() ->
+                        "Entry placed: ${result.placed} paper bets tagged \"$label\"."
+                    else ->
+                        "Entry partly placed: ${result.placed} of ${legs.size} legs. ${result.skipped.first()}"
+                },
+            )
+        }
+    }
+
+    /**
+     * Turns one of the user's own findings into a testable strategy: the proposal becomes
+     * a formula, the bench tests it on a fresh simulated season, and the sandbox gate
+     * decides whether it ever trades.
+     */
+    fun testFinding(proposal: StrategyParams, title: String, advice: String) {
+        viewModelScope.launch {
+            val outcome = runCatching { repo.createClaimFromParams(proposal, "Your $title rule", advice) }
+            _messages.emit(
+                outcome.fold(
+                    onSuccess = { it.note },
+                    onFailure = { "Could not test that rule: ${it.message ?: "unknown error"}" },
+                ),
+            )
         }
     }
 
@@ -179,6 +224,7 @@ fun PortfolioScreen(onOpenPlain: () -> Unit) {
     val snack = remember { SnackbarHostState() }
     var settling by remember { mutableStateOf<BetUi?>(null) }
     var placing by remember { mutableStateOf(false) }
+    var entering by remember { mutableStateOf(false) }
     var resetting by remember { mutableStateOf(false) }
     var chartMode by rememberSaveable { mutableStateOf(PracticeChartMode.BANKROLL.name) }
     var filterId by remember { mutableStateOf<String?>(null) }
@@ -206,6 +252,7 @@ fun PortfolioScreen(onOpenPlain: () -> Unit) {
                 BankrollCard(
                     state,
                     onPlace = { placing = true },
+                    onEnter = { entering = true },
                     onReset = { resetting = true },
                 )
             }
@@ -214,6 +261,15 @@ fun PortfolioScreen(onOpenPlain: () -> Unit) {
                     state,
                     mode = mode,
                     onMode = { chartMode = it.name },
+                )
+            }
+            item {
+                StreakCard(state)
+            }
+            item {
+                UserInsightsCard(
+                    insights = state.userInsights,
+                    onTest = { proposal, title, advice -> vm.testFinding(proposal, title, advice) },
                 )
             }
             if (state.formulaRecords.isNotEmpty()) {
@@ -266,6 +322,15 @@ fun PortfolioScreen(onOpenPlain: () -> Unit) {
             }
             item { PracticeFooter(onOpenPlain) }
         }
+    }
+
+    if (entering) {
+        EntrySheet(
+            picks = state.picks,
+            available = state.available,
+            onDismiss = { entering = false },
+            onPlace = { legs, stake -> vm.placeEntry(legs, stake) },
+        )
     }
 
     if (placing) {
@@ -328,7 +393,7 @@ private fun Header(onOpenPlain: () -> Unit) {
 }
 
 @Composable
-private fun BankrollCard(state: PortfolioState, onPlace: () -> Unit, onReset: () -> Unit) {
+private fun BankrollCard(state: PortfolioState, onPlace: () -> Unit, onEnter: () -> Unit, onReset: () -> Unit) {
     val tone = when {
         state.settled.isEmpty() -> Palette.Chalk
         state.profit > 0.005 -> Palette.Gain
@@ -381,12 +446,21 @@ private fun BankrollCard(state: PortfolioState, onPlace: () -> Unit, onReset: ()
             )
         }
         Spacer(Modifier.height(14.dp))
-        ActionButton(
+        Row {
+            ActionButton(
             if (state.picks.isEmpty()) "No priced picks to bet yet" else "Place a paper bet",
-            onPlace,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.picks.isNotEmpty() && state.available >= 0.5,
-        )
+                onPlace,
+                modifier = Modifier.weight(1f),
+                enabled = state.picks.isNotEmpty() && state.available >= 0.5,
+            )
+            Spacer(Modifier.width(10.dp))
+            ActionButton(
+                "Build an entry",
+                onEnter,
+                modifier = Modifier.weight(1f),
+                enabled = state.picks.size >= 2 && state.available >= 1.0,
+            )
+        }
         if (state.available < 0.5 && state.open.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Text(
@@ -802,4 +876,192 @@ private fun ResultDialog(bet: BetUi, onDismiss: () -> Unit, onConfirm: (Double) 
         confirmButton = { TextButton(onClick = { value?.let(onConfirm) }, enabled = value != null) { Text("Settle bet") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+/**
+ * The gamification strip: the current run, the last results as dots, and the milestones
+ * the record has earned. Every number is read off the stored bets, so a badge can only
+ * ever celebrate something that actually happened.
+ */
+@Composable
+private fun StreakCard(state: PortfolioState) {
+    val streak = PracticeLedger.streak(state.settled)
+    val best = PracticeLedger.bestStreak(state.settled)
+    val form = PracticeLedger.form(state.settled)
+    val badges = PracticeLedger.badges(state.open, state.settled)
+    val earned = badges.count { it.earned }
+    Panel(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "FORM AND STREAK",
+                style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+                modifier = Modifier.weight(1f),
+            )
+            when {
+                streak > 0 -> Badge("$streak IN A ROW", Palette.Gain, filled = true)
+                streak < 0 -> Badge("${-streak} LOSING RUN", Palette.Loss, filled = true)
+                else -> Badge("NO RUN YET", Palette.Faint)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        if (form.isEmpty()) {
+            Text(
+                "No settled bets yet. Your form strip starts with your first result.",
+                style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
+            )
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                form.forEach { outcome ->
+                    val tone = if (outcome == Outcome.WIN) Palette.Gain else Palette.Loss
+                    val letter = if (outcome == Outcome.WIN) "W" else "L"
+                    Box(
+                        Modifier.size(26.dp).clip(CircleShape).background(tone.copy(alpha = 0.18f))
+                            .border(1.dp, tone, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(letter, style = MaterialTheme.typography.labelSmall, color = tone)
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "best run $best",
+                    style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "MILESTONES · $earned of ${badges.size}",
+            style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            badges.forEach { badge -> MilestoneChip(badge) }
+        }
+    }
+}
+
+@Composable
+private fun MilestoneChip(badge: Milestone) {
+    val shape = RoundedCornerShape(12.dp)
+    Column(
+        Modifier.clip(shape)
+            .background(if (badge.earned) Palette.Gain.copy(alpha = 0.12f) else Palette.Ink, shape)
+            .border(1.dp, if (badge.earned) Palette.Gain.copy(alpha = 0.5f) else Palette.Hairline, shape)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            badge.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (badge.earned) Palette.Chalk else Palette.Faint,
+            maxLines = 1,
+        )
+        Text(
+            badge.detail,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (badge.earned) Palette.Gain else Palette.Faint,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * What the user's own settled bets teach. This is the self-learning loop with the user's
+ * own record as the input: the same segment analysis the system runs on itself, naming
+ * the sides, markets and price bands this bettor keeps taking. Each rule a finding
+ * implies can be filed as a testable strategy with one tap — the bench checks it on a
+ * fresh simulated season, and the sandbox gate decides whether it ever trades. Nothing
+ * here changes a live probability by itself.
+ */
+@Composable
+private fun UserInsightsCard(
+    insights: UserInsightsUi,
+    onTest: (StrategyParams, String, String) -> Unit,
+) {
+    Panel(Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "WHAT YOUR BETS TAUGHT THE SYSTEM",
+                style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+                modifier = Modifier.weight(1f),
+            )
+            Badge("${insights.considered} SETTLED", Palette.Over)
+        }
+        Spacer(Modifier.height(10.dp))
+        if (insights.findings.isEmpty()) {
+            Text(
+                if (insights.note.isNotBlank()) insights.note
+                else "Place and settle paper bets and this card names your habits: which side, market or " +
+                    "price band you keep taking, and whether it is paying.",
+                style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
+            )
+        } else {
+            insights.findings.forEachIndexed { index, finding ->
+                if (index > 0) {
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(color = Palette.Hairline)
+                    Spacer(Modifier.height(12.dp))
+                }
+                UserFindingRow(finding, onTest)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "A finding describes your record; it is not a prediction. Testing a rule files it as a " +
+                "strategy the sandbox has to clear like any other.",
+            style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
+        )
+    }
+}
+
+@Composable
+private fun UserFindingRow(
+    finding: UserFindingUi,
+    onTest: (StrategyParams, String, String) -> Unit,
+) {
+    val tone = when (finding.kind) {
+        InsightKind.LEAK -> Palette.Loss
+        InsightKind.EDGE -> Palette.Gain
+        InsightKind.PATTERN -> Palette.Over
+        InsightKind.TREND -> Palette.Caution
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Badge(finding.kind.label.uppercase(), tone, filled = true)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            finding.title,
+            Modifier.weight(1f),
+            style = MaterialTheme.typography.titleSmall, color = Palette.Chalk,
+        )
+    }
+    Spacer(Modifier.height(4.dp))
+    Text(finding.detail, style = MaterialTheme.typography.bodySmall, color = Palette.Dust)
+    Spacer(Modifier.height(4.dp))
+    Text(finding.advice, style = MaterialTheme.typography.bodySmall, color = Palette.Dust)
+    if (finding.proposalLabel != null) {
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Rule it implies: ${finding.proposalLabel}",
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+            )
+            val proposal = finding.proposal
+            if (proposal != null && finding.status == "NOT TESTED YET") {
+                Spacer(Modifier.width(8.dp))
+                ChoiceChip(
+                    "Test as a formula",
+                    selected = false,
+                    onClick = { onTest(proposal, finding.title, finding.advice) },
+                )
+            } else if (finding.status != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(finding.status, style = MaterialTheme.typography.labelSmall, color = Palette.Dust)
+            }
+        }
+    }
 }

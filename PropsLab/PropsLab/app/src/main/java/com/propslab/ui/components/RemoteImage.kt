@@ -71,9 +71,10 @@ fun RemoteImage(
     }
 
     Box(modifier, contentAlignment = Alignment.Center) {
-        if (image != null) {
+        val bitmap = image
+        if (bitmap != null) {
             Image(
-                bitmap = image!!,
+                bitmap = bitmap,
                 contentDescription = contentDescription,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,

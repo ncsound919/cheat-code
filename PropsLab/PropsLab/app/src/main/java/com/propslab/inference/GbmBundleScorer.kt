@@ -74,7 +74,11 @@ class GbmBundleScorer(private val bundle: GbmBundle) : StatisticalScorer {
             for (tree in fold.trees) {
                 raw += walk(tree.nodes, request.features, bundle.features)
             }
-            val prob = sigmoid(raw).coerceIn(1e-12, 1.0 - 1e-12)
+            // No epsilon clamp here: `predict_bundle` feeds sigmoid(raw) straight
+            // into np.interp, which already clips to the isotonic endpoints. A
+            // clamp would diverge from the reference wherever the map does not
+            // start at 0 / end at 1.
+            val prob = sigmoid(raw)
             calibrated[fi] = interp(prob, fold.isotonic.xs, fold.isotonic.ys)
         }
         val meanCalibrated = calibrated.average()

@@ -91,7 +91,11 @@ class ConsoleTest {
     ): Triple<ConsoleEngine, FakeTranscript, AssistantPort> {
         val transcript = FakeTranscript()
         val registry = ToolRegistry(tools, data)
-        return Triple(ConsoleEngine(registry, transcript, assistant) { 1_700_000_000_000L }, transcript, assistant)
+        return Triple(
+            ConsoleEngine(registry, transcript, assistant, clock = { 1_700_000_000_000L }),
+            transcript,
+            assistant,
+        )
     }
 
     @Test

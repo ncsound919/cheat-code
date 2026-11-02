@@ -140,8 +140,9 @@ internal class FixtureSeeder(
             val evalNow = if (f.game == "g-past") quoteTs + 2 * min else now
             val reasons = PredictionGate.evaluate(f.line, quoteTs, cutoffTs, evalNow, true, f.market)
             val probs = if (reasons.isEmpty()) OutcomeProbabilities(f.pOver, f.pPush, 1.0 - f.pOver - f.pPush) else null
-            val explanation = if (probs != null && f.over != null && f.under != null) {
-                assistant.explain(ExplainInput(f.name, f.line!!, probs, Odds.noVigOver(f.over, f.under), f.flags))
+            val line = f.line
+            val explanation = if (probs != null && line != null && f.over != null && f.under != null) {
+                assistant.explain(ExplainInput(f.name, line, probs, Odds.noVigOver(f.over, f.under), f.flags))
             } else ""
             preds += PredictionEntity(
                 id = "pred-${f.key}", quoteId = qid, gameId = f.game, playerId = pid, market = f.market,

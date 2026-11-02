@@ -191,4 +191,97 @@ class PracticeLedgerTest {
         assertTrue(advice.contains("No results yet"))
         assertTrue(advice.contains("8 decided bets"))
     }
+
+    private fun settledBet(id: String, outcome: Outcome, ts: Long, profit: Double = 0.9) = BetUi(
+        id = id,
+        playerName = "Player $id",
+        teamCode = "BOS",
+        side = Side.OVER,
+        line = 24.5,
+        odds = -110,
+        stake = 1.0,
+        decidedUtc = ts,
+        actual = 24.0,
+        outcome = outcome,
+        profit = profit,
+        settledUtc = ts,
+        market = "player_points",
+        book = "book",
+    )
+
+    @Test fun streakCountsConsecutiveWinsFromTheLatest() {
+        val bets = listOf(
+            settledBet("a", Outcome.WIN, 1L),
+            settledBet("b", Outcome.LOSS, 2L),
+            settledBet("c", Outcome.WIN, 3L),
+            settledBet("d", Outcome.WIN, 4L),
+        )
+        assertEquals(2, PracticeLedger.streak(bets))
+    }
+
+    @Test fun streakGoesNegativeOnALosingRun() {
+        val bets = listOf(
+            settledBet("a", Outcome.WIN, 1L),
+            settledBet("b", Outcome.LOSS, 2L),
+            settledBet("c", Outcome.LOSS, 3L),
+            settledBet("d", Outcome.LOSS, 4L),
+        )
+        assertEquals(-3, PracticeLedger.streak(bets))
+    }
+
+    @Test fun streakSkipsPushesInsteadOfEndingTheRun() {
+        val bets = listOf(
+            settledBet("a", Outcome.WIN, 1L),
+            settledBet("b", Outcome.PUSH, 2L, profit = 0.0),
+            settledBet("c", Outcome.WIN, 3L),
+        )
+        assertEquals(2, PracticeLedger.streak(bets))
+    }
+
+    @Test fun streakIsZeroWithNothingDecided() {
+        assertEquals(0, PracticeLedger.streak(emptyList()))
+        assertEquals(0, PracticeLedger.streak(listOf(bet("o", null, null))))
+    }
+
+    @Test fun bestStreakFindsTheLongestWinningRun() {
+        val bets = listOf(
+            settledBet("a", Outcome.WIN, 1L),
+            settledBet("b", Outcome.WIN, 2L),
+            settledBet("c", Outcome.WIN, 3L),
+            settledBet("d", Outcome.LOSS, 4L),
+            settledBet("e", Outcome.WIN, 5L),
+            settledBet("f", Outcome.WIN, 6L),
+        )
+        assertEquals(3, PracticeLedger.bestStreak(bets))
+        assertEquals(2, PracticeLedger.streak(bets))
+    }
+
+    @Test fun formReturnsTheNewestDecidedResultsOldestFirst() {
+        val bets = listOf(
+            settledBet("a", Outcome.WIN, 1L),
+            settledBet("b", Outcome.PUSH, 2L, profit = 0.0),
+            settledBet("c", Outcome.LOSS, 3L),
+            settledBet("d", Outcome.WIN, 4L),
+        )
+        assertEquals(listOf(Outcome.WIN, Outcome.LOSS, Outcome.WIN), PracticeLedger.form(bets))
+        assertEquals(listOf(Outcome.LOSS, Outcome.WIN), PracticeLedger.form(bets, n = 2))
+    }
+
+    @Test fun badgesTrackWhatTheRecordActuallyEarned() {
+        val settled = (1..10).map { settledBet("s$it", Outcome.WIN, it.toLong()) }
+        val badges = PracticeLedger.badges(emptyList(), settled).associateBy { it.id }
+        assertEquals(true, badges.getValue("first-bet").earned)
+        assertEquals(true, badges.getValue("first-win").earned)
+        assertEquals(true, badges.getValue("ten-settled").earned)
+        assertEquals(false, badges.getValue("twenty-five").earned)
+        assertEquals(true, badges.getValue("streak-5").earned)
+        assertEquals(true, badges.getValue("in-profit").earned)
+        assertEquals(false, badges.getValue("ten-units").earned)
+    }
+
+    @Test fun badgesStartUnearnedOnAnEmptyLedger() {
+        val badges = PracticeLedger.badges(emptyList(), emptyList())
+        assertTrue(badges.isNotEmpty())
+        assertTrue(badges.none { it.earned })
+    }
 }

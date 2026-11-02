@@ -220,6 +220,21 @@ val Glossary: List<PlainSection> = listOf(
                     "it exists to keep score.",
             ),
             PlainEntry(
+                "Top pick",
+                "The single biggest disagreement between the app and the book today. " +
+                    "It is always shown, even on a quiet day, so you can see what the app likes most.",
+            ),
+            PlainEntry(
+                "Today's picks",
+                "Every bet the live strategy wants today, biggest gap first. " +
+                    "An empty list with CHECKED means the board was read and nothing stood out — not that the app is broken.",
+            ),
+            PlainEntry(
+                "LOW confidence (red)",
+                "The app and the book nearly agree. The row gets a red border and a LOW tag in the corner: " +
+                    "treat it as a watch, not a bet.",
+            ),
+            PlainEntry(
                 "Stake",
                 "How much of the bankroll goes on one bet, measured in units.",
             ),
@@ -231,6 +246,58 @@ val Glossary: List<PlainSection> = listOf(
                 "Win / loss / push",
                 "Win pays out at the listed odds, loss costs the stake, push lands exactly on the line " +
                     "and returns the stake untouched.",
+            ),
+            PlainEntry(
+                "Entry",
+                "Several paper bets placed together from the entry board, one amount per leg, all grouped " +
+                    "under one entry tag. Each leg still settles on its own game, so the system learns from every leg separately."
+            ),
+            PlainEntry(
+                "Streak and form",
+                "Your current run of wins or losses in a row, and your last results as dots. " +
+                    "Pushes return the stake, so they never end a run."
+            ),
+            PlainEntry(
+                "Milestone",
+                "A badge the record earns itself: first win, settled counts, longest runs, profit targets. " +
+                    "An unearned badge names its target, so it reads as a goal, not a tease."
+            ),
+            PlainEntry(
+                "What your bets taught the system",
+                "The same segment analysis the system runs on its own record, run on your settled paper bets instead. " +
+                    "A finding can name a side, market or price band you keep taking; testing it files it as a strategy " +
+                    "the bench checks on a season it has never seen."
+            ),
+        ),
+    ),
+    PlainSection(
+        "THE FORMULAS YOU BUILD WITH",
+        listOf(
+            PlainEntry(
+                "No-vig price (fair price)",
+                "The book marks up both sides so it wins either way. This strips that markup out, " +
+                    "leaving what the price would say if the book took no cut. Around 5% hold is normal; much more is a bad deal.",
+            ),
+            PlainEntry(
+                "Expected value (EV)",
+                "What you would win or lose on average per 1 unit if you made the same bet thousands of times. " +
+                    "Positive means the price is cheap compared to what the app believes; negative means expensive. " +
+                    "A push just returns your stake.",
+            ),
+            PlainEntry(
+                "Kelly stake",
+                "How much of your bankroll to bet: a bigger edge means a bigger stake, a tiny edge a tiny one. " +
+                    "The app only ever suggests a fraction of the full number, to stay cautious. Near zero means skip the bet.",
+            ),
+            PlainEntry(
+                "Calibration (Platt)",
+                "Fixes overconfidence: when the app says 60%, it should really happen about 60% of the time. " +
+                    "It never flips which side is favoured, it only fixes the number, and the app refits it by itself after results.",
+            ),
+            PlainEntry(
+                "Trying a formula",
+                "In the strategy lab each formula shows IN PLAIN ENGLISH first, then the math behind a tap. " +
+                    "Change the edge or the price and watch the stake move: that is the formula working.",
             ),
         ),
     ),

@@ -34,6 +34,8 @@ data class ClaimLens(
     val minEdgePts: Double,
     val minPrice: Double,
     val maxPrice: Double,
+    /** Markets a learned lesson has removed. Empty means nothing is excluded. */
+    val excludeMarkets: List<String> = emptyList(),
 ) {
     fun params(): StrategyParams = StrategyParams(
         minEdgePts = minEdgePts,
@@ -42,6 +44,7 @@ data class ClaimLens(
         maxPrice = maxPrice,
         tiltPts = tiltPts,
         markets = markets,
+        excludeMarkets = excludeMarkets,
     )
 
     /** The sentence a non-bettor reads: what this lens actually does to a price. */

@@ -30,6 +30,8 @@ import com.propslab.data.AutopilotUi
 import com.propslab.data.BestBetsUi
 import com.propslab.data.BestPickUi
 import com.propslab.data.GamePickUi
+import com.propslab.data.PlaceResult
+import com.propslab.data.PracticeLedger
 import com.propslab.data.PropsRepository
 import com.propslab.domain.Odds
 import com.propslab.domain.Side
@@ -46,14 +48,19 @@ import com.propslab.ui.components.TeamMark
 import com.propslab.ui.components.WorkToggle
 import com.propslab.ui.components.bookLabel
 import com.propslab.ui.fmtDay
+import com.propslab.ui.fmtAgo
 import com.propslab.ui.fmtLine
 import com.propslab.ui.fmtOdds
 import com.propslab.ui.fmtPct
 import com.propslab.ui.fmtSigned
 import com.propslab.ui.fmtTime
 import com.propslab.ui.theme.Palette
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -69,6 +76,31 @@ class BestViewModel(private val repo: PropsRepository) : ViewModel() {
         private set
     var message by mutableStateOf<String?>(null)
         private set
+
+    /** What the practice account can still stake, so the bet sheet never offers more. */
+    val available: StateFlow<Double> = repo.bets().map { bets ->
+        PracticeLedger.available(
+            bets.filter { !it.isOpen }.sumOf { it.profit ?: 0.0 },
+            bets.filter { it.isOpen }.sumOf { it.stake },
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PracticeLedger.STARTING_BANKROLL)
+
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
+
+    fun place(propId: String, side: Side, stake: Double) {
+        viewModelScope.launch {
+            _messages.emit(
+                when (val result = repo.placeBet(propId, side, stake)) {
+                    PlaceResult.Placed -> "Paper bet recorded. It is in your Bets tab."
+                    PlaceResult.Duplicate -> "You already have a paper bet on the ${side.label} for this prop."
+                    PlaceResult.Unavailable -> "This estimate is unavailable, so no bet was recorded."
+                    is PlaceResult.NotEnoughBankroll ->
+                        "Only ${"%.2f".format(result.available)} practice units are available, so no bet was recorded."
+                },
+            )
+        }
+    }
 
     fun runEverything() {
         if (running) return
@@ -104,13 +136,19 @@ fun BestScreen(
     val easy = AppSettings.current.easyMode
     var showDetails by rememberSaveable { mutableStateOf(false) }
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp,
-            bottom = 120.dp,
-        ),
-    ) {
+    val available by vm.available.collectAsStateWithLifecycle()
+    val snack = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    var betting by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<BestPickUi?>(null) }
+    androidx.compose.runtime.LaunchedEffect(vm) { vm.messages.collect { snack.showSnackbar(it) } }
+
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 12.dp,
+                bottom = 120.dp,
+            ),
+        ) {
         item { BestHeader(state, easy, onOpenPlain) }
         item {
             Column(Modifier.padding(horizontal = 20.dp)) {
@@ -150,23 +188,41 @@ fun BestScreen(
                 GamePickCard(pick, easy = easy && !showDetails)
             }
         }
+        item {
+            TopPickCard(state, easy = easy && !showDetails, onClick = onOpen, onBet = { betting = it })
+        }
+        item {
+            Text(
+                if (easy && !showDetails) "TODAY'S PICKS · ${state.picks.size}" else "TODAY'S PICKS · BEST FIRST · ${state.picks.size}",
+                Modifier.padding(start = 20.dp, top = 28.dp, bottom = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = Palette.Over,
+            )
+        }
         if (state.picks.isEmpty()) {
-            item { EmptyBest(onOpenSandbox) }
+            item { EmptyBest(state, auto, onOpenSandbox) }
         } else {
-            item {
-                Text(
-                    if (easy && !showDetails) "PICKS TO REVIEW" else "BEST FIRST · BIGGEST GAP VS THE BOOK",
-                    Modifier.padding(start = 20.dp, top = 28.dp, bottom = 4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Palette.Over,
-                )
-            }
             items(state.picks, key = { it.prop.id }) { pick ->
-                BestRow(pick, easy = easy && !showDetails, onClick = { onOpen(pick.prop.id) })
+                BestRow(pick, easy = easy && !showDetails, onClick = { onOpen(pick.prop.id) }, onBet = { betting = pick })
                 HorizontalDivider(Modifier.padding(start = 74.dp, end = 20.dp), color = Palette.Hairline)
             }
         }
         if (!easy || showDetails) item { BestFooter(state) }
+        }
+        androidx.compose.material3.SnackbarHost(
+            snack,
+            Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
+        )
+    }
+
+    betting?.let { pick ->
+        PropBetSheet(
+            prop = pick.prop,
+            suggestedSide = pick.side,
+            available = available,
+            onDismiss = { betting = null },
+            onPlace = { side, stake -> vm.place(pick.prop.id, side, stake) },
+        )
     }
 }
 
@@ -248,16 +304,103 @@ private fun StrategyPanel(state: BestBetsUi, onOpenSandbox: () -> Unit, onOpenLe
     }
 }
 
+/** Edge in points to a HIGH / MEDIUM / LOW word, matching the learning ledger bands. */
+private fun pickConfidence(edgePts: Double): String = when {
+    abs(edgePts) >= 2.0 -> "HIGH"
+    abs(edgePts) >= 1.0 -> "MEDIUM"
+    else -> "LOW"
+}
+
+/**
+ * The top pick, always present. When the board has a pick it is the biggest gap;
+ * when it does not, it says exactly why: no board, no formula, or nothing clearing the bar.
+ */
 @Composable
-private fun BestRow(pick: BestPickUi, easy: Boolean, onClick: () -> Unit) {
+private fun TopPickCard(state: BestBetsUi, easy: Boolean, onClick: (String) -> Unit, onBet: (BestPickUi) -> Unit) {
+    val top = state.picks.firstOrNull()
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+        Panel(tone = if (top != null && pickConfidence(top.edgePts) == "LOW") Palette.Raised else Palette.Court) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("TOP PICK", style = MaterialTheme.typography.labelSmall, color = Palette.Faint, modifier = Modifier.weight(1f))
+                if (top != null && pickConfidence(top.edgePts) == "LOW") Badge("LOW", Palette.Loss, filled = true)
+            }
+            Spacer(Modifier.height(8.dp))
+            if (top == null) {
+                val headline = if (!state.hasFormula) {
+                    "No top pick yet: no strategy has graduated."
+                } else if (!state.live) {
+                    "No top pick yet: the leader is still practising in the sandbox."
+                } else {
+                    "No top pick today: the live formula clears nothing on this board."
+                }
+                Text(
+                    headline,
+                    style = MaterialTheme.typography.titleMedium, color = Palette.Chalk,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "That is a real answer, not a missing one: the board was checked and nothing stood out enough to take. " +
+                        "The list below says what was checked and when.",
+                    style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
+                )
+            } else {
+                val low = pickConfidence(top.edgePts) == "LOW"
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(top.prop.playerName, style = MaterialTheme.typography.titleMedium, color = Palette.Chalk)
+                        Text(
+                            "${top.side.label} ${fmtLine(top.prop.line)} ${top.prop.market} · ${fmtOdds(top.odds)}",
+                            style = MaterialTheme.typography.bodySmall, color = Palette.Dust,
+                        )
+                    }
+                    if (low) Badge("LOW", Palette.Loss, filled = true)
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (low) "Low confidence: the app and the book nearly agree. Treat this as a watch, not a bet."
+                    else if (easy) plainValue(top)
+                    else "Gap ${fmtSigned(top.edgePts)} pts · value ${fmtSigned(top.ev, 3)} per unit.",
+                    style = MaterialTheme.typography.bodySmall, color = if (low) Palette.Loss else Palette.Dust,
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ActionButton(
+                        if (top.shadow) "Review try-out" else "Open top pick",
+                        onClick = { onClick(top.prop.id) },
+                        modifier = Modifier.weight(1f),
+                        tone = Palette.Over,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    BetRowButton(onClick = { onBet(top) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BestRow(pick: BestPickUi, easy: Boolean, onClick: () -> Unit, onBet: () -> Unit) {
     val p = pick.prop
     val probs = p.probabilities
     val tone = if (pick.side == Side.OVER) Palette.Over else Palette.Under
     val belowBar = pick.shadow && pick.edgePts < 0.5
+    val low = pickConfidence(pick.edgePts) == "LOW"
+    val shape = RoundedCornerShape(16.dp)
+    val rowModifier = if (low) {
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 6.dp)
+            .clip(shape).background(Palette.Raised).border(1.dp, Palette.Loss, shape).padding(horizontal = 0.dp, vertical = 14.dp)
+    } else {
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp)
+    }
 
-    Column(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 14.dp),
-    ) {
+    Column(rowModifier) {
+        if (low) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                Badge("LOW", Palette.Loss, filled = true)
+            }
+            Spacer(Modifier.height(4.dp))
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             TeamMark(p.teamCode, size = 42.dp)
             Spacer(Modifier.width(12.dp))
@@ -332,6 +475,8 @@ private fun BestRow(pick: BestPickUi, easy: Boolean, onClick: () -> Unit) {
             }
         }
         Row(Modifier.padding(start = 54.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            BetRowButton(onClick = onBet)
+            Spacer(Modifier.width(10.dp))
             Spacer(Modifier.weight(1f))
             when {
                 pick.live && !belowBar -> Badge("LIVE PICK", Palette.Gain)
@@ -469,9 +614,11 @@ private fun ParlayEntry(picks: Int, games: Int, onOpen: () -> Unit) {
 private fun GamePickCard(pick: GamePickUi, easy: Boolean) {
     val shape = RoundedCornerShape(16.dp)
     val tone = if ((pick.edgePts ?: 0.0) > 0) Palette.Gain else Palette.Dust
+    val low = pick.confidence.equals("LOW", ignoreCase = true)
+    val border = if (low) Palette.Loss else Palette.Hairline
     Column(
         Modifier.padding(horizontal = 20.dp, vertical = 6.dp).fillMaxWidth()
-            .clip(shape).background(Palette.Court).border(1.dp, Palette.Hairline, shape).padding(14.dp),
+            .clip(shape).background(Palette.Court).border(1.dp, border, shape).padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -482,12 +629,18 @@ private fun GamePickCard(pick: GamePickUi, easy: Boolean) {
                 )
                 Text(
                     "${pick.marketLabel} · ${pick.confidence.lowercase()} confidence · ${pick.sample} games of team form",
-                    style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+                    style = MaterialTheme.typography.labelSmall, color = if (low) Palette.Loss else Palette.Faint,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
             Spacer(Modifier.width(8.dp))
-            Badge(fmtOdds(pick.odds), if (pick.ev > 0) Palette.Gain else Palette.Dust)
+            Column(horizontalAlignment = Alignment.End) {
+                if (low) {
+                    Badge("LOW", Palette.Loss, filled = true)
+                    Spacer(Modifier.height(4.dp))
+                }
+                Badge(fmtOdds(pick.odds), if (pick.ev > 0) Palette.Gain else Palette.Dust)
+            }
         }
         Spacer(Modifier.height(10.dp))
         Text(pick.selection, style = MaterialTheme.typography.titleLarge, color = Palette.Chalk)
@@ -525,15 +678,31 @@ private fun plainValue(pick: BestPickUi): String = when {
 }
 
 @Composable
-private fun EmptyBest(onOpenSandbox: () -> Unit) {
+private fun EmptyBest(state: BestBetsUi, auto: AutopilotUi, onOpenSandbox: () -> Unit) {
+    val reason = when {
+        !state.hasFormula -> "No strategy has graduated yet, so there is no live list to clear. " +
+            "This is the app still searching — not a broken board."
+        !state.live -> "The leading strategy is still practising in the sandbox, so nothing is promoted to the live list yet."
+        state.anyFixture -> "Today's board is still synthetic fixture data. The formula checked it and nothing stood out enough to take."
+        else -> "The live formula checked today's board and nothing stood out enough to take. " +
+            "That is a real answer — checked and empty — not a sync failure."
+    }
     Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
         Panel {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("TODAY'S PICKS: NONE", style = MaterialTheme.typography.labelSmall, color = Palette.Faint, modifier = Modifier.weight(1f))
+                Badge("CHECKED", Palette.Gain, filled = true)
+            }
+            Spacer(Modifier.height(8.dp))
             Text("Nothing clears the bar today", style = MaterialTheme.typography.titleLarge, color = Palette.Chalk)
             Spacer(Modifier.height(8.dp))
+            Text(reason, style = MaterialTheme.typography.bodyMedium, color = Palette.Dust)
+            Spacer(Modifier.height(10.dp))
             Text(
-                "Either the board is thin, or no formula has earned the right to trade it yet. " +
-                    "The sandbox keeps searching either way.",
-                style = MaterialTheme.typography.bodyMedium, color = Palette.Dust,
+                "What was checked: formula ${state.strategyLabel ?: "none yet"} · " +
+                    "${state.ready} of ${state.considered} passed every check · round ${state.round} · " +
+                    (if (auto.lastRunUtc > 0L) "last automatic update ${fmtAgo(auto.lastRunUtc)}" else "no automatic run recorded yet") + ".",
+                style = MaterialTheme.typography.bodySmall, color = Palette.Faint,
             )
             Spacer(Modifier.height(14.dp))
             ActionButton("Open the sandbox", onOpenSandbox)

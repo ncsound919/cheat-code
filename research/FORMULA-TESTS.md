@@ -9,9 +9,12 @@ implementations of the same arithmetic.
 gradle :app:testDebugUnitTest
 ```
 
-**Result: 30 tests, 0 failures.** `DomainTest` (7) and `FormulaTest` (15) cover the
-domain layer; `MathXTest` (8) covers the Math X formula lab, the ported prompt modes,
-the probability guard and the local-model fallback.
+**Result: 287 tests across 26 suites, 0 failures, 4 skipped** (the skipped cases are
+the live ESPN smoke checks, which only run when their environment variable is set).
+`DomainTest` (8) and `FormulaTest` (15) cover the domain layer; `MathXTest` (8)
+covers the Math X formula lab, the ported prompt modes, the probability guard and
+the local-model fallback. The rest of the suite covers the feed parsers, fantasy
+desk, parlay arithmetic, settlement, the practice ledger and the agent tool policy.
 
 The new layer under test is `domain/Formulas.kt`:
 
@@ -86,7 +89,9 @@ probability is not an edge against the same book.
 ## What is still not tested
 
 No prop quotes exist, so `marketOver`, `edgePts` and EV are tested as arithmetic,
-not against a real sportsbook. No GBM bundle is imported yet, so tree-walker parity
-against Python is still the next gate (see `research/OSS-TOOLING.md`). The local
-model boundary is tested with fakes and the uninstalled path; no real quantised model
-has produced a reply inside the app.
+not against a real sportsbook. The promoted GBM bundle is parity-checked against
+Python to 1.1e-16 over 120 sampled rows (`harness/gbm_artifact_parity.py`), but it
+is not on the live board path: the odds feed does not carry five of its twelve
+features, so `ChampionTable` remains the shipped model. The local model boundary is
+tested with fakes and the uninstalled path; no real quantised model has produced a
+reply inside the app.

@@ -281,7 +281,9 @@ object FantasyDesk {
     ): List<FantasyPlayer> {
         val injuryByKey = injuries
             .groupBy { it.playerKey.ifBlank { Names.key(it.playerName) } }
-            .mapValues { (_, rows) -> rows.maxByOrNull { it.observedUtc }!! }
+            // groupBy never yields an empty list, so this fallback is the
+            // first row only if the list invariant is ever broken.
+            .mapValues { (_, rows) -> rows.maxByOrNull { it.observedUtc } ?: rows.first() }
         return lines
             .filter { it.playerKey.isNotBlank() && it.fantasyPoints.isFinite() }
             .groupBy { it.playerKey }

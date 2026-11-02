@@ -153,6 +153,84 @@ object PracticeLedger {
 
     private fun Double.coerceFinite(): Double = if (isFinite()) this else 0.0
 
+    /**
+     * The user's current run, read oldest-to-newest so a push never ends a run
+     * unfairly: pushes return the stake, so they are skipped rather than counted
+     * as a break. Positive means consecutive wins, negative means consecutive
+     * losses, zero means nothing decided yet.
+     */
+    fun streak(settled: List<BetUi>): Int {
+        val decided = settled.sortedBy { it.settledUtc ?: 0L }
+            .mapNotNull {
+                when (it.outcome) {
+                    Outcome.WIN -> 1
+                    Outcome.LOSS -> -1
+                    else -> null
+                }
+            }
+        if (decided.isEmpty()) return 0
+        val last = decided.last()
+        var run = 0
+        for (result in decided.asReversed()) {
+            if (result != last) break
+            run += 1
+        }
+        return run * last
+    }
+
+    /** The longest winning run the account has ever posted, pushes skipped. */
+    fun bestStreak(settled: List<BetUi>): Int {
+        var best = 0
+        var run = 0
+        settled.sortedBy { it.settledUtc ?: 0L }.forEach {
+            when (it.outcome) {
+                Outcome.WIN -> {
+                    run += 1
+                    if (run > best) best = run
+                }
+                Outcome.LOSS -> run = 0
+                else -> Unit
+            }
+        }
+        return best
+    }
+
+    /** The newest [n] decided results, oldest first, for the form strip. */
+    fun form(settled: List<BetUi>, n: Int = 8): List<Outcome> =
+        settled.filter { it.outcome == Outcome.WIN || it.outcome == Outcome.LOSS }
+            .sortedBy { it.settledUtc ?: 0L }
+            .takeLast(n)
+            .mapNotNull { it.outcome }
+
+    /**
+     * Milestones earned from the stored record only. Every badge names the exact
+     * count that earned it, so an unearned badge reads as a target, not a tease.
+     */
+    fun badges(open: List<BetUi>, settled: List<BetUi>): List<Milestone> {
+        val decided = settled.count { it.outcome == Outcome.WIN || it.outcome == Outcome.LOSS }
+        val wins = settled.count { it.outcome == Outcome.WIN }
+        val profit = settled.sumOf { it.profit ?: 0.0 }
+        val best = bestStreak(settled)
+        return listOf(
+            Milestone("first-bet", "First slip", "${open.size + settled.size} placed", open.isNotEmpty() || settled.isNotEmpty()),
+            Milestone("first-win", "First win", "$wins won", wins >= 1),
+            Milestone("ten-settled", "10 settled", "$decided/10 decided", decided >= 10),
+            Milestone("twenty-five", "25 settled", "$decided/25 decided", decided >= 25),
+            Milestone("streak-3", "3 in a row", "best $best", best >= 3),
+            Milestone("streak-5", "5 in a row", "best $best", best >= 5),
+            Milestone("in-profit", "In profit", "${"%.1f".format(profit)} units", profit > 0.0 && decided > 0),
+            Milestone("ten-units", "+10 units", "${"%.1f".format(profit)}/10", profit >= 10.0),
+        )
+    }
+
+/** One gamification milestone: what it is, where the account stands, earned or not. */
+data class Milestone(
+    val id: String,
+    val label: String,
+    val detail: String,
+    val earned: Boolean,
+)
+
     private class Accumulator(var label: String) {
         var bets = 0
         var open = 0

@@ -9,8 +9,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +36,8 @@ import com.propslab.data.GameGroup
 import com.propslab.data.GameLinesUi
 import com.propslab.data.GameMarketUi
 import com.propslab.data.GameSideUi
+import com.propslab.data.PlaceResult
+import com.propslab.data.PracticeLedger
 import com.propslab.data.PropUi
 import com.propslab.data.PropsRepository
 import com.propslab.domain.Pricing
@@ -53,11 +58,15 @@ import com.propslab.ui.fmtPct
 import com.propslab.ui.fmtSigned
 import com.propslab.ui.fmtTime
 import com.propslab.ui.theme.Palette
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 data class SlateState(
@@ -92,7 +101,7 @@ data class SlateState(
             .maxByOrNull { abs(it.edgePts ?: 0.0) }
 }
 
-class SlateViewModel(repo: PropsRepository) : ViewModel() {
+class SlateViewModel(private val repo: PropsRepository) : ViewModel() {
     val state: StateFlow<SlateState> = combine(repo.slate(), repo.gameLines()) { props, lines ->
         SlateState(
             games = props.groupBy { it.gameId }.map { (id, ps) ->
@@ -102,6 +111,30 @@ class SlateViewModel(repo: PropsRepository) : ViewModel() {
             loaded = true,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SlateState())
+    /** What the practice account can still stake, so the bet sheet never offers more. */
+    val available: StateFlow<Double> = repo.bets().map { bets ->
+        PracticeLedger.available(
+            bets.filter { !it.isOpen }.sumOf { it.profit ?: 0.0 },
+            bets.filter { it.isOpen }.sumOf { it.stake },
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PracticeLedger.STARTING_BANKROLL)
+
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
+
+    fun place(propId: String, side: Side, stake: Double) {
+        viewModelScope.launch {
+            _messages.emit(
+                when (val result = repo.placeBet(propId, side, stake)) {
+                    PlaceResult.Placed -> "Paper bet recorded. It is in your Bets tab."
+                    PlaceResult.Duplicate -> "You already have a paper bet on the ${side.label} for this prop."
+                    PlaceResult.Unavailable -> "This estimate is unavailable, so no bet was recorded."
+                    is PlaceResult.NotEnoughBankroll ->
+                        "Only ${"%.2f".format(result.available)} practice units are available, so no bet was recorded."
+                },
+            )
+        }
+    }
 }
 
 @Composable
@@ -117,13 +150,18 @@ fun SlateScreen(onOpen: (String) -> Unit, onOpenPlain: () -> Unit) {
         ordered(state.games.filter { league == null || it.sport == league }, byEdge)
     }
     val easy = AppSettings.current.easyMode
+    val available by vm.available.collectAsStateWithLifecycle()
+    val snack = remember { SnackbarHostState() }
+    var betting by remember { mutableStateOf<PropUi?>(null) }
+    LaunchedEffect(vm) { vm.messages.collect { snack.showSnackbar(it) } }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = WindowInsets.statusBars.asPaddingValues().let {
-        PaddingValues(top = it.calculateTopPadding() + 12.dp, bottom = 120.dp)
-    }) {
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = WindowInsets.statusBars.asPaddingValues().let {
+            PaddingValues(top = it.calculateTopPadding() + 12.dp, bottom = 120.dp)
+        }) {
         item { SlateHeader(state, league, { league = it }, byEdge, easy, { byEdge = it }, onOpenPlain) }
         if (state.loaded && state.total == 0) {
-            item { EmptySlate() }
+            item { EmptySlate(state) }
         }
         if (state.loaded && state.total > 0 && games.isEmpty()) {
             item { EmptyLeague(league) }
@@ -134,10 +172,22 @@ fun SlateScreen(onOpen: (String) -> Unit, onOpenPlain: () -> Unit) {
                 item(key = "lines-${game.id}") { GameLinesCard(lines) }
             }
             items(game.props, key = { it.id }) { prop ->
-                PropRow(prop, onClick = { onOpen(prop.id) })
+                PropRow(prop, onClick = { onOpen(prop.id) }, onBet = { betting = prop })
                 HorizontalDivider(Modifier.padding(start = 74.dp), color = Palette.Hairline)
             }
         }
+        }
+        SnackbarHost(snack, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp))
+    }
+
+    betting?.let { prop ->
+        PropBetSheet(
+            prop = prop,
+            suggestedSide = prop.lean ?: Side.OVER,
+            available = available,
+            onDismiss = { betting = null },
+            onPlace = { side, stake -> vm.place(prop.id, side, stake) },
+        )
     }
 }
 
@@ -299,20 +349,26 @@ private fun PulseRule() {
 }
 
 @Composable
-private fun EmptySlate() {
+private fun EmptySlate(state: SlateState) {
     val shape = RoundedCornerShape(18.dp)
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 28.dp)
             .clip(shape).border(1.dp, Palette.Hairline, shape).padding(20.dp),
     ) {
-        Text("No props on the board", style = MaterialTheme.typography.titleLarge, color = Palette.Chalk)
+        Text("No props on the board — checked, not broken", style = MaterialTheme.typography.titleLarge, color = Palette.Chalk)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Prices and estimates appear here once a model file and a price feed are added.",
+            if (state.hasFixture) "The board was read and only synthetic test rows are present, with nothing priced yet. " +
+                "Add the read-only price key in Lab → Live data and the board fills itself."
+            else "The board was read and nothing on today's slate is priced yet. " +
+                "Prices and estimates appear here once a price feed syncs; nothing is guessed to fill the space.",
             style = MaterialTheme.typography.bodyMedium, color = Palette.Dust,
         )
         Spacer(Modifier.height(12.dp))
-        Text("Nothing is guessed to fill the space.", style = MaterialTheme.typography.labelSmall, color = Palette.Faint)
+        Text(
+            "${state.total} props · ${state.scored} priced · ${state.priced} tradable. Checked just now from this phone.",
+            style = MaterialTheme.typography.labelSmall, color = Palette.Faint,
+        )
     }
 }
 
@@ -359,7 +415,7 @@ private fun GameHeader(game: GameGroup) {
 }
 
 @Composable
-private fun PropRow(p: PropUi, onClick: () -> Unit) {
+private fun PropRow(p: PropUi, onClick: () -> Unit, onBet: (PropUi) -> Unit) {
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 14.dp)
@@ -378,7 +434,7 @@ private fun PropRow(p: PropUi, onClick: () -> Unit) {
             }
         }
         val probs = p.probabilities
-        Row(Modifier.padding(start = 54.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(start = 54.dp, top = 8.dp, end = 0.dp), verticalAlignment = Alignment.CenterVertically) {
             if (probs != null) {
                 val push = probs.push.toFloat()
                 SplitBar(
@@ -390,6 +446,12 @@ private fun PropRow(p: PropUi, onClick: () -> Unit) {
                 EdgeLabel(p)
             } else {
                 Text(p.reasons.firstOrNull() ?: "Unavailable", style = MaterialTheme.typography.bodySmall, color = Palette.Caution)
+            }
+        }
+        if (p.available) {
+            Row(Modifier.padding(start = 54.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.weight(1f))
+                BetRowButton(onClick = { onBet(p) })
             }
         }
     }

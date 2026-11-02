@@ -17,6 +17,10 @@ data class FormulaSpec(
     val title: String,
     val mode: MathXMode,
     val statement: String,
+    /** One or two sentences saying what this formula does for a bet, with no symbols. */
+    val plain: String = "",
+    /** What to try if you want to play with it: which input moves the answer and how. */
+    val tryThis: String = "",
     val symbols: List<String>,
     val steps: List<FormulaStep>,
     val checks: List<FormulaCheck>,
@@ -64,6 +68,10 @@ object FormulaLab {
         title = "No-vig price and hold",
         mode = MathXMode.FORMULA,
         statement = "Remove the book's margin from a two-way market, then measure the margin it charged.",
+        plain = "The book quietly marks up both sides so it wins either way. " +
+            "This strips that markup out, leaving what the price would say about the game if the book took no cut. " +
+            "The leftover markup is the hold: around 5% is normal, much more means a bad deal for you.",
+        tryThis = "Compare the book's price to the no-vig number. If they are far apart, the book is charging you a lot to play.",
         symbols = listOf("dec_over", "dec_under", "i_over", "i_under"),
         steps = listOf(
             FormulaStep(
@@ -111,6 +119,10 @@ object FormulaLab {
         title = "Expected value with push mass",
         mode = MathXMode.PROBABILITY,
         statement = "A push returns the stake, so it is a zero-profit outcome rather than a loss.",
+        plain = "If you made this same bet thousands of times for 1 unit, this is what you would win or lose on average per bet. " +
+            "Positive means the price is cheap compared to what the app believes; negative means it is expensive. " +
+            "Landing exactly on a whole-number line just gives your stake back, so it counts as neither win nor loss.",
+        tryThis = "Look for a positive number. A small positive is a small disagreement; a big positive is the app saying the book is wrong.",
         symbols = listOf("p", "t", "q", "b", "stake"),
         steps = listOf(
             FormulaStep("definition", "q = 1 - p - t", "q is the loss probability"),
@@ -151,6 +163,9 @@ object FormulaLab {
         title = "Kelly fraction with push mass",
         mode = MathXMode.PROBABILITY,
         statement = "Maximise expected log growth when a push returns the stake and contributes zero growth.",
+        plain = "This decides how much of your bankroll to stake: a bigger edge means a bigger bet, a tiny edge means a tiny bet. " +
+            "It grows the bankroll steadily instead of risking it all at once. The app only ever suggests a fraction of this number to stay cautious.",
+        tryThis = "A bigger edge raises the suggested stake; a price near the fair price drops it toward zero, which means skip the bet.",
         symbols = listOf("p", "t", "q", "b", "f"),
         steps = listOf(
             FormulaStep("objective", "g(f) = p · ln(1 + b·f) + q · ln(1 - f)", "growth rate of the bankroll"),
@@ -214,6 +229,10 @@ object FormulaLab {
         title = "Platt calibration on the logit",
         mode = MathXMode.PROBABILITY,
         statement = "A linear correction on the logit stays inside the probability space and is monotone when a is positive.",
+        plain = "Models are often a little overconfident or underconfident. " +
+            "This gently stretches or shrinks past probabilities so that when the app says 60%, it really happens about 60% of the time. " +
+            "It never changes which side is favoured, it only fixes the number.",
+        tryThis = "After enough finished bets, the app refits this correction by itself. You do not need to touch it.",
         symbols = listOf("p", "a", "b", "z"),
         steps = listOf(
             FormulaStep("definition", "logit(p) = ln(p / (1 - p))", "z = a · logit(p) + b"),

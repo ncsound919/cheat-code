@@ -342,5 +342,39 @@ object ModelHub {
         else -> "$value"
     }
 
+    /** The Hugging Face page for a repository, for the "open on the web" link. */
+    fun pageUrl(repo: String): String = "https://huggingface.co/$repo"
+
+    /**
+     * The shop's own answer for this phone: which curated repository to download first.
+     *
+     * The band comes from [DeviceProfile.recommendedBand], which is measured from RAM,
+     * not guessed. Big phones get the 3B Qwen, small ones get the 0.5B, and the middle
+     * gets the 1.5B default. The caller still reads the real file list before downloading,
+     * so a renamed GGUF upstream cannot break this choice.
+     */
+    fun recommendedFor(totalRamGb: Double): CuratedModel = when {
+        totalRamGb >= 14.0 -> curated.first { it.repo == "bartowski/Qwen2.5-3B-Instruct-GGUF" }
+        totalRamGb >= 9.0 -> curated.first { it.repo == "bartowski/Qwen2.5-3B-Instruct-GGUF" }
+        totalRamGb >= 7.0 -> curated.first { it.repo == "bartowski/Qwen2.5-1.5B-Instruct-GGUF" }
+        else -> curated.first { it.repo == "Qwen/Qwen2.5-0.5B-Instruct-GGUF" }
+    }
+
+    /**
+     * Picks the file to download automatically: the largest Q4_K_M that fits the budget,
+     * falling back to the largest fitting file, then to the smallest file overall.
+     * Returns null when the repository publishes no GGUF at all.
+     */
+    fun autoFile(files: List<HubFile>, budgetBytes: Long): HubFile? {
+        if (files.isEmpty()) return null
+        val usable = files.filter { !it.isProjector && !it.isLora }
+        if (usable.isEmpty()) return null
+        val fitting = if (budgetBytes > 0L) usable.filter { it.bytes in 1..budgetBytes } else usable
+        val preferred = fitting.filter { it.quant.equals("Q4_K_M", ignoreCase = true) }
+        return preferred.maxByOrNull { it.bytes }
+            ?: fitting.maxByOrNull { it.bytes }
+            ?: usable.minByOrNull { it.bytes }
+    }
+
     const val ACTIVE_POINTER = "active.txt"
 }

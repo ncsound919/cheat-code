@@ -2,6 +2,9 @@ package com.propslab.agent
 
 import com.propslab.data.ConsoleDao
 import com.propslab.data.ConsoleTurn
+import com.propslab.ecosystem.TondoResearchClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The agent console.
@@ -69,6 +72,8 @@ class ConsoleEngine(
     private val transcript: ConsoleTranscript,
     private val assistant: AssistantPort,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** The bounded second opinion when the on-device model cannot answer. */
+    private val research: TondoResearchClient? = null,
 ) {
 
     val modelLabel: String get() = assistant.label
@@ -136,13 +141,34 @@ class ConsoleEngine(
             append("User: ").append(line).append('\n')
             append("Console:")
         }
-        val answer = runCatching { assistant.ask(ASSISTANT_RULES, prompt) }
-            .getOrElse { failure ->
-                "The on-device model is not answering (${failure.message ?: failure::class.simpleName}). " +
-                    "Operations still run: type `?` for the list."
+        val local = runCatching { assistant.ask(ASSISTANT_RULES, prompt) }
+        val localText = local.getOrNull()?.trim().orEmpty()
+        if (localText.isNotEmpty()) return reply(TurnKind.SPOKEN, localText, null)
+
+        // Only the question and the failure travel. No props, bets, bankroll or
+        // transcript is sent; the gateway's "internal" class says as much.
+        val assisted = research
+            ?.takeIf { it.isConfigured }
+            ?.let { client ->
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        client.assist(
+                            operation = "propslab console",
+                            question = line,
+                            symptom = local.exceptionOrNull()?.let { failure ->
+                                "the on-device model failed: ${failure.message ?: failure::class.simpleName}"
+                            } ?: "the on-device model returned no text",
+                            dataClass = "internal",
+                        )
+                    }
+                }.getOrNull()
             }
-            .trim()
-            .ifEmpty { "The on-device model returned nothing. Type `?` for the operations I can run." }
+        if (assisted != null) return reply(TurnKind.SPOKEN, assisted.toPlainText(), null)
+
+        val answer = local.exceptionOrNull()?.let { failure ->
+            "The on-device model is not answering (${failure.message ?: failure::class.simpleName}). " +
+                "Operations still run: type `?` for the list."
+        } ?: "The on-device model returned nothing. Type `?` for the operations I can run."
         return reply(TurnKind.SPOKEN, answer, null)
     }
 

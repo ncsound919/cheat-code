@@ -451,6 +451,114 @@ class PropsRepository(
 
     fun bets(): Flow<List<BetUi>> = db.paperDao().observeBets().map { rows -> rows.map { it.toUi() } }
 
+    // ------------------------------------------------- the user's record as a teacher
+
+    /** One settled paper bet, reduced to the fields a strategy can react to. */
+    private fun BetUi.toLossObservation(): LossObservation? =
+        if (outcome != Outcome.WIN && outcome != Outcome.LOSS) null
+        else {
+            val decided = outcome
+            runCatching {
+            LossObservation(
+                market = market,
+                side = side,
+                line = line,
+                odds = odds,
+                edgePts = null,
+                outcome = decided,
+                startUtc = decidedUtc,
+            )
+            }.getOrNull()
+        }
+
+    /**
+     * The user's own settled paper bets through the same descriptive analysis the
+     * system runs on itself. A paper bet carries no stored edge — the estimate at the
+     * time was never recorded — so edge bands are skipped and only side, market and
+     * price bands can speak. The gate is the practice-advice sample, not the system
+     * trend sample, so a user sees their own habits named as soon as advice starts.
+     */
+    fun userInsights(): Flow<UserInsightsUi> = combine(bets(), db.sandboxDao().observeFormulas()) { bets, formulas ->
+        val settled = bets.filter { !it.isOpen }
+        val seed = formulas.firstOrNull { it.tier == Tier.LIVE }
+            ?.params?.let { StrategyParams.parse(it) }
+            ?: StrategyParams(minEdgePts = 2.0)
+        val report = LossInsights.analyze(
+            observations = settled.mapNotNull { it.toLossObservation() },
+            seed = seed,
+            minSample = PracticeLedger.MIN_ADVICE_DECISIONS,
+        )
+        val byId = formulas.associateBy { it.id }
+        UserInsightsUi(
+            findings = report.findings.map { finding ->
+                val proposal = finding.proposal
+                UserFindingUi(
+                    id = finding.id,
+                    kind = finding.kind,
+                    title = finding.title,
+                    detail = finding.detail,
+                    advice = finding.advice,
+                    proposal = proposal,
+                    proposalLabel = proposal?.label,
+                    status = proposal?.let { candidate ->
+                        when (val run = byId[candidate.id]) {
+                            null -> "NOT TESTED YET"
+                            else -> {
+                                val history = when (run.historyVerdict) {
+                                    "PASS" -> " · HISTORY PASS"
+                                    "FAIL" -> " · HISTORY FAIL"
+                                    else -> ""
+                                }
+                                when {
+                                    run.tier == Tier.LIVE -> "ON THE LIVE BOOK$history"
+                                    run.tier == Tier.RETIRED -> "TESTED · RETIRED$history"
+                                    run.verdict == "PASS" -> "TESTED · ROUND ${run.round} · PASSED$history"
+                                    else -> "TESTED · ROUND ${run.round} · HELD$history"
+                                }
+                            }
+                        }
+                    },
+                )
+            },
+            considered = report.considered,
+            note = report.note,
+        )
+    }
+
+    /** One leg of a PrizePicks-style entry: the prop and the side the user took. */
+    data class EntryLeg(val predictionId: String, val side: Side)
+
+    /** What placing a whole entry did, leg by leg, so the slip never hides a skip. */
+    data class EntryResult(
+        val entryId: String,
+        val placed: Int,
+        val skipped: List<String>,
+    )
+
+    /**
+     * Places a whole entry as one action: one paper bet per leg at the same stake, all
+     * tagged to the same entry label so the formula chart and the history filter can
+     * read the entry back as a group. Each leg still settles on its own game, which is
+     * what lets the self-learning loop learn from every leg separately.
+     */
+    suspend fun placeEntry(legs: List<EntryLeg>, stake: Double, entryLabel: String): EntryResult {
+        val entryId = "entry-" + Integer.toHexString("${clock()}|${legs.joinToString(",") { it.predictionId }}|".hashCode())
+        var placed = 0
+        val skipped = ArrayList<String>()
+        for (leg in legs) {
+            when (val result = placeBet(leg.predictionId, leg.side, stake, entryId, entryLabel)) {
+                PlaceResult.Placed -> placed += 1
+                PlaceResult.Duplicate -> skipped += "Already have that side on this prop."
+                PlaceResult.Unavailable -> skipped += "One leg was no longer priced."
+                is PlaceResult.NotEnoughBankroll -> {
+                    skipped += "Bankroll ran out after $placed leg${if (placed == 1) "" else "s"}."
+                    break
+                }
+            }
+        }
+        return EntryResult(entryId, placed, skipped.distinct())
+    }
+
     fun audit(): Flow<List<AuditEventEntity>> = db.auditDao().observe()
 
     // ------------------------------------------------------------------------- live feed
@@ -755,6 +863,51 @@ class PropsRepository(
         )
         val formula = ClaimCompiler.compile(text, board)
         val bench = withContext(Dispatchers.Default) { ClaimBench.run(formula) }
+        return persistClaim(formula, bench, now, "compiled to")
+    }
+
+    /**
+     * The generative step of the bet simulator: a rule the user's own record implies,
+     * built straight into a testable strategy without going through the text compiler.
+     *
+     * A finding from the user's settled paper bets carries a [StrategyParams] proposal;
+     * this turns that proposal into a [ClaimFormula] with the same bench, the same
+     * sandbox entry and the same promotion gate as a typed claim. Nothing here bets or
+     * changes a live probability: a generated strategy still has to clear the bench and
+     * then win a normal promotion round on a season it has never seen.
+     */
+    suspend fun createClaimFromParams(params: StrategyParams, name: String, reason: String): ClaimOutcome {
+        val now = clock()
+        val formula = ClaimFormula(
+            id = "user-" + Integer.toHexString("${params.id}|${reason.trim()}".hashCode()),
+            claim = reason.trim(),
+            name = name,
+            factorTag = "user-record",
+            factorTitle = "From your record",
+            lens = ClaimLens(
+                tiltPts = params.tiltPts,
+                side = params.sideFilter,
+                markets = params.markets,
+                minEdgePts = params.minEdgePts,
+                minPrice = params.minPrice,
+                maxPrice = params.maxPrice,
+                excludeMarkets = params.excludeMarkets,
+            ),
+            headline = name,
+            inGameTerms = listOf(reason.trim(), "Generated from the pattern in your own settled practice bets."),
+            falsifier = "If your next settled bets stop showing this pattern, the rule was noise and should be retired.",
+            subject = null,
+        )
+        val bench = withContext(Dispatchers.Default) { ClaimBench.run(formula) }
+        return persistClaim(formula, bench, now, "built from your record to")
+    }
+
+    /**
+     * Files a benched formula on the lens board and, when it cleared the bench, enters
+     * it into the sandbox grid. Shared by typed claims and strategies the user's own
+     * record generated, because both face the identical test and the identical gate.
+     */
+    private suspend fun persistClaim(formula: ClaimFormula, bench: ClaimBench.Result, now: Long, verb: String): ClaimOutcome {
         val params = bench.chosen.params
         val status = if (bench.ready) ClaimStatus.CANDIDATE else ClaimStatus.REJECTED
 
@@ -817,7 +970,7 @@ class PropsRepository(
             }
             audit(
                 "claim_created", formula.id,
-                "\"${formula.claim.take(160)}\" compiled to ${params.id} " +
+                "\"${formula.claim.take(160)}\" $verb ${params.id} " +
                     "(${if (bench.ready) "cleared" else "failed"} the bench on ${bench.seasonProps} props)",
             )
         }
@@ -1749,8 +1902,12 @@ class PropsRepository(
         // implies a rule becomes a candidate on the same fresh season as every other row;
         // the gate still decides whether it trades anything.
         val settledProps = db.learningDao().settled(LearningTrack.PROP)
+        // The user's own settled paper bets join the same analysis, so the way a person
+        // actually bets — the sides and price bands they keep taking — can steer the next
+        // generation of candidates alongside the system's own record.
+        val userLessons = bets().first().filter { !it.isOpen }.mapNotNull { it.toLossObservation() }
         val lessons = LossInsights.analyze(
-            observations = settledProps.mapNotNull { it.toLossObservation() },
+            observations = settledProps.mapNotNull { it.toLossObservation() } + userLessons,
             seed = incumbentParams ?: StrategyParams(minEdgePts = 2.0),
         )
         val lessonGrid = lessons.proposals
